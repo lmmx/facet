@@ -25,7 +25,7 @@ checksum = "b985e394ee53f8e4c547d5c6fa75b83b243ab6f51563a0323f1475fc8abc8e7f"
 
 [[package]]
 name = "shapely"
-version = "1.0.0"
+version = "2.0.0"
 dependencies = [
  "shapely-core",
  "shapely-derive",
@@ -33,11 +33,11 @@ dependencies = [
 
 [[package]]
 name = "shapely-core"
-version = "1.0.0"
+version = "2.0.0"
 
 [[package]]
 name = "shapely-derive"
-version = "1.0.0"
+version = "2.0.0"
 dependencies = [
  "shapely-core",
  "unsynn",
@@ -45,7 +45,7 @@ dependencies = [
 
 [[package]]
 name = "shapely-json"
-version = "1.0.0"
+version = "2.0.0"
 dependencies = [
  "shapely",
 ]
