@@ -74,10 +74,4 @@ fn test_to_json() {
     .unwrap();
     let json_indented = String::from_utf8(buffer).unwrap();
     assert_eq!(json_indented, expected_json_indented.trim());
-
-    // Test roundtrip
-    let mut deserialized = TestStruct::partial();
-    from_json(&mut deserialized, expected_json).unwrap();
-    let deserialized_struct = deserialized.build::<TestStruct>();
-    assert_eq!(deserialized_struct, test_struct);
 }

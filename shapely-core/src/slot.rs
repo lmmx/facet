@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::ptr::NonNull;
 
 use crate::Partial;
-use crate::{InitMark, ShapeDesc, Shapely, trace};
+use crate::{trace, InitMark, ShapeDesc, Shapely};
 /// Where to write the value
 pub enum Destination<'s> {
     /// Writes directly to some address. If it's already initialized,
@@ -197,10 +197,10 @@ impl<'s> Slot<'s> {
     /// This allows for a more direct deserialization workflow.
     pub fn into_partial(self) -> Partial<'s> {
         let shape = self.shape;
-        let dest = self.dest;
+        let mut dest = self.dest;
 
         // Check if we need to uninitialize the field
-        if let Destination::Ptr { ptr, mut init_mark } = &dest {
+        if let Destination::Ptr { ptr, init_mark } = &mut dest {
             if init_mark.get() {
                 if let Some(drop_fn) = shape.get().drop_in_place {
                     unsafe {
