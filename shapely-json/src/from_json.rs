@@ -32,7 +32,7 @@ pub fn from_json<'input>(
         partial: std::mem::replace(partial, Partial::alloc(partial.shape())),
     });
 
-    while let Some(mut state) = stack.pop() {
+    while let Some(state) = stack.pop() {
         match state {
             DeserializeState::Value { mut partial } => {
                 let shape_desc = partial.shape();
@@ -81,15 +81,15 @@ pub fn from_json<'input>(
                 key,
                 partial_field,
             } => {
-                // Set up the next state to continue parsing the struct after this field
-                stack.push(DeserializeState::StructContinue {
-                    partial: parent_partial,
-                    first: false,
-                });
-
                 // Push the value we need to deserialize
                 stack.push(DeserializeState::Value {
                     partial: partial_field,
+                });
+
+                // Push the struct continue state to process after the field
+                stack.push(DeserializeState::StructContinue {
+                    partial: parent_partial,
+                    first: false,
                 });
             }
             DeserializeState::StructContinue { mut partial, first } => {
@@ -109,12 +109,6 @@ pub fn from_json<'input>(
                     };
 
                     let partial_field = Partial::alloc(slot.shape());
-
-                    // Push back the current struct state
-                    stack.push(DeserializeState::StructContinue {
-                        partial,
-                        first: false,
-                    });
 
                     // Push the field state which will deserialize the value
                     stack.push(DeserializeState::StructField {
