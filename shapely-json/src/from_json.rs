@@ -1,5 +1,5 @@
 use crate::parser::{JsonParseErrorKind, JsonParseErrorWithContext, JsonParser};
-use self_cell::self_cell;
+use self_cell::{self_cell, MutBorrow};
 use shapely::{error, trace, warn, Partial};
 
 pub fn from_json<'input, 's>(
@@ -13,7 +13,7 @@ pub fn from_json<'input, 's>(
 
     self_cell!(
         struct FieldOf<'s> {
-            owner: Partial<'s>,
+            owner: MutBorrow<Partial<'s>>,
 
             #[covariant]
             dependent: Partial,
@@ -87,9 +87,10 @@ pub fn from_json<'input, 's>(
 
                 if let Some(key) = key {
                     trace!("Processing struct key: \x1b[1;33m{key}\x1b[0m");
-                    stack.push(DeserializeState::FieldOf(FieldOf::new(partial, |p| {
-                        p.slot_by_name(&key).unwrap().into_partial()
-                    })));
+                    stack.push(DeserializeState::FieldOf(FieldOf::new(
+                        MutBorrow::new(partial),
+                        |p| p.borrow_mut().slot_by_name(&key).unwrap().into_partial(),
+                    )));
                 } else {
                     // No more fields, we're done with this struct
                     trace!("Finished deserializing \x1b[1;36mstruct\x1b[0m");
