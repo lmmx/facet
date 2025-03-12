@@ -101,8 +101,8 @@ pub fn from_json<'input, 's>(
                     partial.build_in_place();
                 }
             }
-            DeserializeState::FieldOf(_fo) => {
-                todo!()
+            DeserializeState::FieldOf(fo) => {
+                // mh
             }
         }
     }
