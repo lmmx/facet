@@ -214,7 +214,7 @@ impl<'s> Slot<'s> {
 
         // Create a borrowed Partial that writes directly to the slot's memory location
         if let Destination::Ptr { ptr, .. } = dest {
-            Partial::new_borrowed(ptr, shape, Some(dest))
+            Partial::for_dest(ptr, shape, Some(dest))
         } else {
             // For HashMap entries, we need to allocate a new Partial
             // and ensure it's properly inserted into the map when built

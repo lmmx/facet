@@ -2,12 +2,13 @@ use crate::{slot::Destination, trace, FieldError, ShapeDesc, Shapely, Slot};
 use std::{alloc, ptr::NonNull};
 
 /// Origin of the partial — did we allocate it? Or is it borrowed?
-pub enum Origin<'s> {
+/// The lifetime is the one of the struct this was borrowed from — it's irrelevant for Owned
+pub enum Origin<'parent> {
     /// It was allocated via `alloc::alloc` and needs to be deallocated on drop.
-    Owned { dest: Option<Destination<'s>> },
+    Owned { dest: Option<Destination<'parent>> },
 
     /// It was borrowed from some outside code, and we are NOT to free it.
-    Borrowed { dest: Option<Destination<'s>> },
+    Borrowed { dest: Option<Destination<'parent>> },
 }
 
 /// A partially-initialized shape.
@@ -15,13 +16,13 @@ pub enum Origin<'s> {
 /// This type keeps track of the initialized state of every field and only allows getting out the
 /// concrete type or the boxed concrete type or moving out of this partial into a pointer if all the
 /// fields have been initialized.
-pub struct Partial<'s> {
+pub struct Partial<'parent> {
     // Address of the value we're building in memory.
     /// If the type is a ZST, then the addr will be dangling.
     addr: NonNull<u8>,
 
     // Where `addr` came from (ie. are we responsible for freeing it?)
-    origin: Origin<'s>,
+    origin: Origin<'parent>,
 
     // Keeps track of which fields are initialized
     init_set: InitSet64,
@@ -36,68 +37,9 @@ fn _assert_partial_covariant<'long: 'short, 'short>(partial: Partial<'long>) -> 
     partial
 }
 
-impl Drop for Partial<'_> {
-    // This drop function is only really called when a partial is dropped without being fully
-    // built out. Otherwise, it's forgotten because the value has been moved elsewhere.
-    //
-    // As a result, its only job is to drop any fields that may have been initialized. And finally
-    // to free the memory for the partial itself if we own it.
-    fn drop(&mut self) {
-        match self.shape.get().innards {
-            crate::Innards::Struct { fields } => {
-                fields
-                    .iter()
-                    .enumerate()
-                    .filter_map(|(i, field)| {
-                        if self.init_set.is_set(i) {
-                            Some((field, field.shape.get().drop_in_place?))
-                        } else {
-                            None
-                        }
-                    })
-                    .for_each(|(field, drop_fn)| {
-                        unsafe {
-                            // SAFETY: field_addr is valid, aligned, and initialized.
-                            //
-                            // If the struct is a ZST, then `self.addr` is dangling.
-                            // That also means that all the fields are ZSTs, which means
-                            // the actual address we pass to the drop fn does not matter,
-                            // but we do want the side effects.
-                            //
-                            // If the struct is not a ZST, then `self.addr` is a valid address.
-                            // The fields can still be ZST and that's not a special case, really.
-                            drop_fn(self.addr.byte_add(field.offset).as_ptr());
-                        }
-                    })
-            }
-            crate::Innards::Scalar(_) => {
-                if self.init_set.is_set(0) {
-                    // Drop the scalar value if it has a drop function
-                    if let Some(drop_fn) = self.shape.get().drop_in_place {
-                        // SAFETY: self.addr is always valid for Scalar types,
-                        // even for ZSTs where it might be dangling.
-                        unsafe {
-                            drop_fn(self.addr.as_ptr());
-                        }
-                    }
-                }
-            }
-            _ => {}
-        }
-
-        // Only deallocate if we own the memory
-        match &self.origin {
-            Origin::Owned { .. } => self.deallocate(),
-            Origin::Borrowed { .. } => {
-                // For borrowed memory, we don't deallocate
-            }
-        }
-    }
-}
-
-impl<'s> Partial<'s> {
+impl<'parent> Partial<'parent> {
     /// Allocates a partial on the heap for the given shape descriptor.
-    pub fn alloc(shape: ShapeDesc) -> Self {
+    pub fn alloc(shape: ShapeDesc) -> Partial<'static> {
         let sh = shape.get();
         let layout = sh.layout;
         let addr = if layout.size() == 0 {
@@ -113,7 +55,7 @@ impl<'s> Partial<'s> {
             unsafe { NonNull::new_unchecked(addr) }
         };
 
-        Self {
+        Partial {
             origin: Origin::Owned { dest: None },
             addr,
             init_set: Default::default(),
@@ -124,7 +66,7 @@ impl<'s> Partial<'s> {
     /// Borrows a `MaybeUninit<Self>` and returns a `Partial`.
     ///
     /// Before calling assume_init, make sure to call Partial.build_in_place().
-    pub fn borrow<T: Shapely>(uninit: &mut std::mem::MaybeUninit<T>) -> Self {
+    pub fn borrow<T: Shapely>(uninit: &'parent mut std::mem::MaybeUninit<T>) -> Self {
         Self {
             origin: Origin::Borrowed { dest: None },
             addr: NonNull::new(uninit.as_mut_ptr() as _).unwrap(),
@@ -134,10 +76,10 @@ impl<'s> Partial<'s> {
     }
 
     /// Creates a new borrowed Partial with the given address, shape, and optional slot.
-    pub fn new_borrowed(
+    pub fn for_dest(
         addr: NonNull<u8>,
         shape: ShapeDesc,
-        dest: Option<Destination<'s>>,
+        dest: Option<Destination<'parent>>,
     ) -> Self {
         Self {
             origin: Origin::Borrowed { dest },
@@ -148,7 +90,7 @@ impl<'s> Partial<'s> {
     }
 
     /// Sets the slot for this Partial.
-    pub fn set_dest(&mut self, dest: Option<Destination<'s>>) {
+    pub fn set_dest(&mut self, dest: Option<Destination<'parent>>) {
         match &mut self.origin {
             Origin::Owned { dest: origin_dest } => {
                 *origin_dest = dest;
@@ -158,8 +100,6 @@ impl<'s> Partial<'s> {
             }
         }
     }
-
-    // Existing methods...
 
     /// Checks if all fields in the struct or scalar value have been initialized.
     /// Panics if any field is not initialized, providing details about the uninitialized field.
@@ -414,6 +354,65 @@ impl<'s> Partial<'s> {
     /// Returns the address of the value we're building in memory.
     pub fn addr(&self) -> NonNull<u8> {
         self.addr
+    }
+}
+
+impl Drop for Partial<'_> {
+    // This drop function is only really called when a partial is dropped without being fully
+    // built out. Otherwise, it's forgotten because the value has been moved elsewhere.
+    //
+    // As a result, its only job is to drop any fields that may have been initialized. And finally
+    // to free the memory for the partial itself if we own it.
+    fn drop(&mut self) {
+        match self.shape.get().innards {
+            crate::Innards::Struct { fields } => {
+                fields
+                    .iter()
+                    .enumerate()
+                    .filter_map(|(i, field)| {
+                        if self.init_set.is_set(i) {
+                            Some((field, field.shape.get().drop_in_place?))
+                        } else {
+                            None
+                        }
+                    })
+                    .for_each(|(field, drop_fn)| {
+                        unsafe {
+                            // SAFETY: field_addr is valid, aligned, and initialized.
+                            //
+                            // If the struct is a ZST, then `self.addr` is dangling.
+                            // That also means that all the fields are ZSTs, which means
+                            // the actual address we pass to the drop fn does not matter,
+                            // but we do want the side effects.
+                            //
+                            // If the struct is not a ZST, then `self.addr` is a valid address.
+                            // The fields can still be ZST and that's not a special case, really.
+                            drop_fn(self.addr.byte_add(field.offset).as_ptr());
+                        }
+                    })
+            }
+            crate::Innards::Scalar(_) => {
+                if self.init_set.is_set(0) {
+                    // Drop the scalar value if it has a drop function
+                    if let Some(drop_fn) = self.shape.get().drop_in_place {
+                        // SAFETY: self.addr is always valid for Scalar types,
+                        // even for ZSTs where it might be dangling.
+                        unsafe {
+                            drop_fn(self.addr.as_ptr());
+                        }
+                    }
+                }
+            }
+            _ => {}
+        }
+
+        // Only deallocate if we own the memory
+        match &self.origin {
+            Origin::Owned { .. } => self.deallocate(),
+            Origin::Borrowed { .. } => {
+                // For borrowed memory, we don't deallocate
+            }
+        }
     }
 }
 

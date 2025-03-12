@@ -1,8 +1,8 @@
 use crate::parser::{JsonParseErrorKind, JsonParseErrorWithContext, JsonParser};
 use shapely::{error, trace, warn, Partial};
 
-pub fn from_json<'input>(
-    partial: &mut Partial,
+pub fn from_json<'input, 's>(
+    partial: Partial<'s>,
     json: &'input str,
 ) -> Result<(), JsonParseErrorWithContext<'input>> {
     use shapely::{Innards, Scalar};
@@ -11,32 +11,20 @@ pub fn from_json<'input>(
     let mut parser = JsonParser::new(json);
 
     // Define our state machine states
-    enum DeserializeState<'a> {
-        SelfRef {
-            parent: Option<Partial<'a>>,
-            field: Option<Partial<'a>>,
-        },
-        Value {
-            partial: Partial<'a>,
-        },
-        Struct {
-            partial: Partial<'a>,
-            first: bool,
-        },
+    enum DeserializeState<'s> {
+        Value { partial: Partial<'s> },
+        Struct { partial: Partial<'s>, first: bool },
     }
 
     // Create our stack and initialize with the root value
     let mut stack = Vec::new();
-    stack.push(DeserializeState::Value {
-        partial: std::mem::replace(partial, Partial::alloc(partial.shape())),
-    });
+    // Note: Partial is NOT clone and should never be cloned
+    // We should never use std::mem::replace or std::mem::take
+    stack.push(DeserializeState::Value { partial });
 
     while let Some(state) = stack.pop() {
         match state {
-            DeserializeState::SelfRef { .. } => {
-                todo!()
-            }
-            DeserializeState::Value { mut partial } => {
+            DeserializeState::Value { partial } => {
                 let shape_desc = partial.shape();
                 let shape = shape_desc.get();
                 trace!("Deserializing value with shape:\n{shape:?}");
@@ -59,6 +47,7 @@ pub fn from_json<'input>(
                                 )));
                             }
                         }
+                        partial.build_in_place();
                     }
                     Innards::Struct { .. } => {
                         trace!("Deserializing \x1b[1;36mstruct\x1b[0m");
@@ -78,7 +67,7 @@ pub fn from_json<'input>(
                     }
                 }
             }
-            DeserializeState::Struct { mut partial, first } => {
+            DeserializeState::Struct { partial, first } => {
                 let key = if first {
                     parser.expect_object_start()?
                 } else {
@@ -88,36 +77,34 @@ pub fn from_json<'input>(
                 if let Some(key) = key {
                     trace!("Processing struct key: \x1b[1;33m{key}\x1b[0m");
 
-                    // Push a self-reference state to be processed after the field
-                    let mut sr = DeserializeState::SelfRef {
-                        parent: Some(partial),
-                        field: None,
-                    };
-                    let slot = match &mut sr {
-                        DeserializeState::SelfRef { parent, field, .. } => {
-                            match parent.as_mut().unwrap().slot_by_name(&key) {
-                                Ok(slot) => *field = Some(slot.into_partial()),
-                                Err(_) => {
-                                    return Err(
-                                        parser.make_error(JsonParseErrorKind::UnknownField(key))
-                                    );
-                                }
-                            }
+                    let field_partial = match partial.slot_by_name(&key) {
+                        Ok(slot) => {
+                            let field_partial = slot.into_partial();
+                            Some(field_partial)
                         }
-                        _ => unreachable!(),
+                        Err(_) => {
+                            return Err(parser.make_error(JsonParseErrorKind::UnknownField(key)));
+                        }
                     };
 
-                    stack.push(sr);
+                    stack.push(DeserializeState::Struct {
+                        partial,
+                        first: false,
+                    });
+                    stack.push(DeserializeState::Value {
+                        partial: field_partial.unwrap(),
+                    });
                 } else {
                     // No more fields, we're done with this struct
                     trace!("Finished deserializing \x1b[1;36mstruct\x1b[0m");
 
                     // TODO: this would be a good place to decide what to do about unset fields? Is this
                     // where we finally get to use `set_default`?
+
+                    partial.build_in_place();
                 }
             }
         }
     }
-
     Ok(())
 }
