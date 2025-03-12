@@ -1,4 +1,5 @@
 use crate::parser::{JsonParseErrorKind, JsonParseErrorWithContext, JsonParser};
+use self_cell::self_cell;
 use shapely::{error, trace, warn, Partial};
 
 pub fn from_json<'input, 's>(
@@ -10,10 +11,20 @@ pub fn from_json<'input, 's>(
     trace!("Starting JSON deserialization");
     let mut parser = JsonParser::new(json);
 
+    self_cell!(
+        struct FieldOf<'s> {
+            owner: Partial<'s>,
+
+            #[covariant]
+            dependent: Partial,
+        }
+    );
+
     // Define our state machine states
     enum DeserializeState<'s> {
         Value { partial: Partial<'s> },
         Struct { partial: Partial<'s>, first: bool },
+        FieldOf(FieldOf<'s>),
     }
 
     // Create our stack and initialize with the root value
@@ -24,7 +35,7 @@ pub fn from_json<'input, 's>(
 
     while let Some(state) = stack.pop() {
         match state {
-            DeserializeState::Value { partial } => {
+            DeserializeState::Value { mut partial } => {
                 let shape_desc = partial.shape();
                 let shape = shape_desc.get();
                 trace!("Deserializing value with shape:\n{shape:?}");
@@ -76,24 +87,9 @@ pub fn from_json<'input, 's>(
 
                 if let Some(key) = key {
                     trace!("Processing struct key: \x1b[1;33m{key}\x1b[0m");
-
-                    let field_partial = match partial.slot_by_name(&key) {
-                        Ok(slot) => {
-                            let field_partial = slot.into_partial();
-                            Some(field_partial)
-                        }
-                        Err(_) => {
-                            return Err(parser.make_error(JsonParseErrorKind::UnknownField(key)));
-                        }
-                    };
-
-                    stack.push(DeserializeState::Struct {
-                        partial,
-                        first: false,
-                    });
-                    stack.push(DeserializeState::Value {
-                        partial: field_partial.unwrap(),
-                    });
+                    stack.push(DeserializeState::FieldOf(FieldOf::new(partial, |p| {
+                        p.slot_by_name(&key).unwrap().into_partial()
+                    })));
                 } else {
                     // No more fields, we're done with this struct
                     trace!("Finished deserializing \x1b[1;36mstruct\x1b[0m");
@@ -103,6 +99,9 @@ pub fn from_json<'input, 's>(
 
                     partial.build_in_place();
                 }
+            }
+            DeserializeState::FieldOf(_fo) => {
+                todo!()
             }
         }
     }
