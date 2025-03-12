@@ -12,8 +12,17 @@ pub fn from_json<'input>(
 
     // Define our state machine states
     enum DeserializeState<'a> {
-        Value { partial: Partial<'a> },
-        Struct { partial: Partial<'a>, first: bool },
+        SelfRef {
+            parent: Option<Partial<'a>>,
+            field: Option<Partial<'a>>,
+        },
+        Value {
+            partial: Partial<'a>,
+        },
+        Struct {
+            partial: Partial<'a>,
+            first: bool,
+        },
     }
 
     // Create our stack and initialize with the root value
@@ -22,13 +31,12 @@ pub fn from_json<'input>(
         partial: std::mem::replace(partial, Partial::alloc(partial.shape())),
     });
 
-    while let Some(state) = stack.last_mut() {
+    while let Some(state) = stack.pop() {
         match state {
-            DeserializeState::Value { .. } => {
-                let mut partial = match stack.pop().unwrap() {
-                    DeserializeState::Value { partial } => partial,
-                    _ => unreachable!(),
-                };
+            DeserializeState::SelfRef { .. } => {
+                todo!()
+            }
+            DeserializeState::Value { mut partial } => {
                 let shape_desc = partial.shape();
                 let shape = shape_desc.get();
                 trace!("Deserializing value with shape:\n{shape:?}");
@@ -70,8 +78,8 @@ pub fn from_json<'input>(
                     }
                 }
             }
-            DeserializeState::Struct { partial, first } => {
-                let key = if *first {
+            DeserializeState::Struct { mut partial, first } => {
+                let key = if first {
                     parser.expect_object_start()?
                 } else {
                     parser.parse_object_key()?
@@ -79,16 +87,27 @@ pub fn from_json<'input>(
 
                 if let Some(key) = key {
                     trace!("Processing struct key: \x1b[1;33m{key}\x1b[0m");
-                    let slot = match partial.slot_by_name(&key) {
-                        Ok(slot) => slot,
-                        Err(_) => {
-                            return Err(parser.make_error(JsonParseErrorKind::UnknownField(key)));
-                        }
+
+                    // Push a self-reference state to be processed after the field
+                    let mut sr = DeserializeState::SelfRef {
+                        parent: Some(partial),
+                        field: None,
                     };
-                    let partial_field = slot.into_partial();
-                    stack.push(DeserializeState::Value {
-                        partial: partial_field,
-                    });
+                    let slot = match &mut sr {
+                        DeserializeState::SelfRef { parent, field, .. } => {
+                            match parent.as_mut().unwrap().slot_by_name(&key) {
+                                Ok(slot) => *field = Some(slot.into_partial()),
+                                Err(_) => {
+                                    return Err(
+                                        parser.make_error(JsonParseErrorKind::UnknownField(key))
+                                    );
+                                }
+                            }
+                        }
+                        _ => unreachable!(),
+                    };
+
+                    stack.push(sr);
                 } else {
                     // No more fields, we're done with this struct
                     trace!("Finished deserializing \x1b[1;36mstruct\x1b[0m");
