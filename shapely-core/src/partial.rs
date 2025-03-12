@@ -1,18 +1,13 @@
-use crate::{trace, FieldError, ShapeDesc, Shapely, Slot};
+use crate::{FieldError, ShapeDesc, Shapely, Slot, trace, slot::Destination};
 use std::{alloc, ptr::NonNull};
 
 /// Origin of the partial — did we allocate it? Or is it borrowed?
 pub enum Origin<'s> {
-    /// It was allocated via `alloc::alloc` and needs to be deallocated on drop,
-    /// moving out, etc.
-    HeapAllocated,
+    /// It was allocated via `alloc::alloc` and needs to be deallocated on drop.
+    Owned { dest: Option<Destination<'s>> },
 
-    /// It was generously lent to us by some outside code, and we are NOT
-    /// to free it (although we should still uninitialize any fields that we initialized).
-    Borrowed {
-        parent: Option<&'s Partial<'s>>,
-        init_mark: InitMark<'s>,
-    },
+    /// It was borrowed from some outside code, and we are NOT to free it.
+    Borrowed { dest: Option<Destination<'s>> },
 }
 
 /// A partially-initialized shape.
@@ -21,19 +16,19 @@ pub enum Origin<'s> {
 /// concrete type or the boxed concrete type or moving out of this partial into a pointer if all the
 /// fields have been initialized.
 pub struct Partial<'s> {
-    /// Address of the value we're building in memory.
+    // Address of the value we're building in memory.
     /// If the type is a ZST, then the addr will be dangling.
-    pub(crate) addr: NonNull<u8>,
+    addr: NonNull<u8>,
 
-    /// Where `addr` came from (ie. are we responsible for freeing it?)
-    pub(crate) origin: Origin<'s>,
+    // Where `addr` came from (ie. are we responsible for freeing it?)
+    origin: Origin<'s>,
 
-    /// Keeps track of which fields are initialized
-    pub(crate) init_set: InitSet64,
+    // Keeps track of which fields are initialized
+    init_set: InitSet64,
 
-    /// The shape we're building, asserted when building, but
+    // The shape we're building, asserted when building, but
     /// also when getting fields slots, etc.
-    pub(crate) shape: ShapeDesc,
+    shape: ShapeDesc,
 }
 
 /// We can build a tree of partials when deserializing, so `Partial<'s>` has to be covariant over 's.
@@ -90,11 +85,17 @@ impl Drop for Partial<'_> {
             _ => {}
         }
 
-        self.deallocate()
+        // Only deallocate if we own the memory
+        match &self.origin {
+            Origin::Owned { .. } => self.deallocate(),
+            Origin::Borrowed { .. } => {
+                // For borrowed memory, we don't deallocate
+            }
+        }
     }
 }
 
-impl Partial<'_> {
+impl<'s> Partial<'s> {
     /// Allocates a partial on the heap for the given shape descriptor.
     pub fn alloc(shape: ShapeDesc) -> Self {
         let sh = shape.get();
@@ -113,7 +114,7 @@ impl Partial<'_> {
         };
 
         Self {
-            origin: Origin::HeapAllocated,
+            origin: Origin::Owned { dest: None },
             addr,
             init_set: Default::default(),
             shape,
@@ -125,15 +126,38 @@ impl Partial<'_> {
     /// Before calling assume_init, make sure to call Partial.build_in_place().
     pub fn borrow<T: Shapely>(uninit: &mut std::mem::MaybeUninit<T>) -> Self {
         Self {
-            origin: Origin::Borrowed {
-                parent: None,
-                init_mark: InitMark::Ignored,
-            },
+            origin: Origin::Borrowed { dest: None },
             addr: NonNull::new(uninit.as_mut_ptr() as _).unwrap(),
             init_set: Default::default(),
             shape: T::shape_desc(),
         }
     }
+
+    /// Creates a new borrowed Partial with the given address, shape, and optional slot.
+    pub fn new_borrowed(addr: NonNull<u8>, shape: ShapeDesc, dest: Option<Destination<'s>>) -> Self {
+        Self {
+            origin: Origin::Borrowed {
+                dest,
+            },
+            addr,
+            init_set: Default::default(),
+            shape,
+        }
+    }
+
+    /// Sets the slot for this Partial.
+    pub fn set_dest(&mut self, dest: Option<Destination<'s>>) {
+        match &mut self.origin {
+            Origin::Owned { dest: origin_dest } => {
+                *origin_dest = dest;
+            },
+            Origin::Borrowed { dest: origin_dest } => {
+                *origin_dest = dest;
+            },
+        }
+    }
+
+    // Existing methods...
 
     /// Checks if all fields in the struct or scalar value have been initialized.
     /// Panics if any field is not initialized, providing details about the uninitialized field.
@@ -195,7 +219,7 @@ impl Partial<'_> {
     }
 
     /// Returns a slot for initializing a field in the shape.
-    pub fn slot_by_name<'s>(&'s mut self, name: &str) -> Result<Slot<'s>, FieldError> {
+    pub fn slot_by_name<'a>(&'a mut self, name: &str) -> Result<Slot<'a>, FieldError> {
         let slot = match self.shape.get().innards {
             crate::Innards::Struct { fields } => {
                 let (index, field) = fields
@@ -242,8 +266,7 @@ impl Partial<'_> {
 
             panic!(
                 "This is a partial \x1b[1;34m{}\x1b[0m, you can't build a \x1b[1;32m{}\x1b[0m out of it",
-                partial_shape,
-                target_shape,
+                partial_shape, target_shape,
             );
         }
     }
@@ -269,12 +292,14 @@ impl Partial<'_> {
         // ensure all fields are initialized
         self.assert_all_fields_initialized();
 
-        match &mut self.origin {
-            Origin::Borrowed { init_mark, .. } => {
-                // Mark the borrowed field as initialized
-                init_mark.set();
+        match &self.origin {
+            Origin::Borrowed { dest } => {
+                // For borrowed memory, we don't need to do anything special
+                // The memory is already in the right place
+                // If there's a slot, we should mark it as initialized
+                // TODO: Implement marking the destination as initialized
             }
-            Origin::HeapAllocated => {
+            Origin::Owned { .. } => {
                 panic!("Cannot build in place for heap allocated Partial");
             }
         }
@@ -294,13 +319,26 @@ impl Partial<'_> {
         self.assert_all_fields_initialized();
         self.assert_matching_shape::<T>();
 
-        // SAFETY: We've verified that all fields are initialized and that the shape matches T.
-        // For zero-sized types, all pointer values are valid.
-        // See https://doc.rust-lang.org/stable/std/ptr/index.html#safety for more details.
-        let result = unsafe {
-            let ptr = self.addr.as_ptr() as *const T;
-            std::ptr::read(ptr)
+        // Match on origin to handle all cases consistently
+        let result = match &self.origin {
+            Origin::Borrowed { dest: _ } => {
+                panic!("Cannot call build() on a Borrowed Partial. Use build_in_place() instead.");
+            },
+            Origin::Owned { dest: Some(_) } => {
+                panic!("Cannot call build() on a Partial with an associated slot. Use build_in_place() instead.");
+            },
+            Origin::Owned { dest: None } => {
+                // This is the only valid case - owned without a slot
+                // SAFETY: We've verified that all fields are initialized and that the shape matches T.
+                // For zero-sized types, all pointer values are valid.
+                // See https://doc.rust-lang.org/stable/std/ptr/index.html#safety for more details.
+                unsafe {
+                    let ptr = self.addr.as_ptr() as *const T;
+                    std::ptr::read(ptr)
+                }
+            }
         };
+
         trace!("Built \x1b[1;33m{}\x1b[0m successfully", T::shape());
         self.deallocate();
         std::mem::forget(self);
@@ -322,10 +360,23 @@ impl Partial<'_> {
     pub fn build_boxed<T: Shapely>(self) -> Box<T> {
         self.assert_all_fields_initialized();
         self.assert_matching_shape::<T>();
-
-        let boxed = unsafe { Box::from_raw(self.addr.as_ptr() as *mut T) };
-        std::mem::forget(self);
-        boxed
+        
+        // Match on origin to handle all cases consistently
+        match &self.origin {
+            Origin::Borrowed { dest: _ } => {
+                panic!("Cannot call build_boxed() on a Borrowed Partial. Use build_in_place() instead.");
+            },
+            Origin::Owned { dest: Some(_) } => {
+                panic!("Cannot call build_boxed() on a Partial with an associated slot. Use build_in_place() instead.");
+            },
+            Origin::Owned { dest: None } => {
+                // This is the only valid case - owned without a slot
+                let boxed = unsafe { Box::from_raw(self.addr.as_ptr() as *mut T) };
+                std::mem::forget(self);
+                boxed
+            }
+        }
+        
     }
 
     /// Moves the contents of this `Partial` into a target memory location.

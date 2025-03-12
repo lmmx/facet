@@ -1,5 +1,5 @@
 use crate::parser::{JsonParseErrorKind, JsonParseErrorWithContext, JsonParser};
-use shapely::{error, trace, warn, Partial};
+use shapely::{Partial, error, trace, warn};
 
 pub fn from_json<'input>(
     partial: &mut Partial,
@@ -104,7 +104,7 @@ pub fn from_json<'input>(
                     let slot = match partial.slot_by_name(&key) {
                         Ok(slot) => slot,
                         Err(_) => {
-                            return Err(parser.make_error(JsonParseErrorKind::UnknownField(key)))
+                            return Err(parser.make_error(JsonParseErrorKind::UnknownField(key)));
                         }
                     };
 
