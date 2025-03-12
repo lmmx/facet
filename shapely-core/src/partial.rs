@@ -221,7 +221,7 @@ impl<'s> Partial<'s> {
     }
 
     /// Returns a slot for initializing a field in the shape.
-    pub fn slot_by_name<'a>(&'a mut self, name: &str) -> Result<Slot<'a>, FieldError> {
+    pub fn slot_by_name<'a: 's>(&'a mut self, name: &str) -> Result<Slot<'s>, FieldError> {
         let slot = match self.shape.get().innards {
             crate::Innards::Struct { fields } => {
                 let (index, field) = fields

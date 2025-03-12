@@ -1,5 +1,5 @@
 use crate::parser::{JsonParseErrorKind, JsonParseErrorWithContext, JsonParser};
-use shapely::{Partial, error, trace, warn};
+use shapely::{error, trace, warn, Partial};
 
 pub fn from_json<'input>(
     partial: &mut Partial,
@@ -12,18 +12,8 @@ pub fn from_json<'input>(
 
     // Define our state machine states
     enum DeserializeState<'a> {
-        Value {
-            partial: Partial<'a>,
-        },
-        StructField {
-            parent_partial: Partial<'a>,
-            key: String,
-            partial_field: Partial<'a>,
-        },
-        StructContinue {
-            partial: Partial<'a>,
-            first: bool,
-        },
+        Value { partial: Partial<'a> },
+        Struct { partial: Partial<'a>, first: bool },
     }
 
     // Create our stack and initialize with the root value
@@ -32,9 +22,13 @@ pub fn from_json<'input>(
         partial: std::mem::replace(partial, Partial::alloc(partial.shape())),
     });
 
-    while let Some(state) = stack.pop() {
+    while let Some(state) = stack.last_mut() {
         match state {
-            DeserializeState::Value { mut partial } => {
+            DeserializeState::Value { .. } => {
+                let mut partial = match stack.pop().unwrap() {
+                    DeserializeState::Value { partial } => partial,
+                    _ => unreachable!(),
+                };
                 let shape_desc = partial.shape();
                 let shape = shape_desc.get();
                 trace!("Deserializing value with shape:\n{shape:?}");
@@ -61,7 +55,7 @@ pub fn from_json<'input>(
                     Innards::Struct { .. } => {
                         trace!("Deserializing \x1b[1;36mstruct\x1b[0m");
                         // Push the struct state on the stack to continue after we process the fields
-                        stack.push(DeserializeState::StructContinue {
+                        stack.push(DeserializeState::Struct {
                             partial,
                             first: true,
                         });
@@ -76,24 +70,8 @@ pub fn from_json<'input>(
                     }
                 }
             }
-            DeserializeState::StructField {
-                parent_partial,
-                key,
-                partial_field,
-            } => {
-                // Push the value we need to deserialize
-                stack.push(DeserializeState::Value {
-                    partial: partial_field,
-                });
-
-                // Push the struct continue state to process after the field
-                stack.push(DeserializeState::StructContinue {
-                    partial: parent_partial,
-                    first: false,
-                });
-            }
-            DeserializeState::StructContinue { mut partial, first } => {
-                let key = if first {
+            DeserializeState::Struct { partial, first } => {
+                let key = if *first {
                     parser.expect_object_start()?
                 } else {
                     parser.parse_object_key()?
@@ -107,14 +85,9 @@ pub fn from_json<'input>(
                             return Err(parser.make_error(JsonParseErrorKind::UnknownField(key)));
                         }
                     };
-
-                    let partial_field = Partial::alloc(slot.shape());
-
-                    // Push the field state which will deserialize the value
-                    stack.push(DeserializeState::StructField {
-                        parent_partial: partial,
-                        key,
-                        partial_field,
+                    let partial_field = slot.into_partial();
+                    stack.push(DeserializeState::Value {
+                        partial: partial_field,
                     });
                 } else {
                     // No more fields, we're done with this struct
