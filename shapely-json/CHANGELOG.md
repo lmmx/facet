@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.1.1](https://github.com/bearcove/shapely/compare/shapely-json-v3.1.0...shapely-json-v3.1.1) - 2025-04-05
+
+### Fixed
+
+- fix json tests
+- fix miri/memory problems
+
+### Other
+
+- C demo
+- shapedebug bye
+- The split has gone well
+- woo everything builds
+- getting there
+- good, good
+- the rest is TODOs
+- json tests almost passing
+- quicksave
+- brrrr
+- set up json again
+- restore json test a little?? not much
+- Use spez-like ideas to set Debug if it's set on the type
+- alright, will this work?
+- Well the tests do pass
+- don't compare strings
+- Make CI pass
+- json works I guess
+- pv.shape eq is always true? woops
+- bit of json as a treat
+- introduce init_in_place_with_capacity
+- whoa hey down to 111 errors
+- Innards => Def
+- Introduce poke
+
 ## [3.1.0](https://github.com/bearcove/shapely/compare/shapely-json-v3.0.0...shapely-json-v3.1.0) - 2025-03-31
 
 ### Added

@@ -15,7 +15,7 @@ rust-version.workspace = true
 [dependencies]
 log = "0.4.27"
 shapely-trait = { workspace = true }
-shapely-poke = { version = "3.1.0", path = "../shapely-poke" }
+shapely-poke = { version = "3.1.1", path = "../shapely-poke" }
 
 [dev-dependencies]
 color-backtrace = { version = "0.7.0", default-features = false, features = [

@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.1.1](https://github.com/bearcove/shapely/compare/shapely-codegen-v3.1.0...shapely-codegen-v3.1.1) - 2025-04-05
+
+### Fixed
+
+- fix errors now
+- fix errors
+
+### Other
+
+- 22 errors yay
+- tuples
+- alright well
+- tuples aw yiss
+- so close
+- whoa hey down to 111 errors
+- innards go in a struct
+- indirect vtable(), start fixing partial
+- tuples impl is up
+
 ## [3.1.0](https://github.com/bearcove/shapely/compare/shapely-codegen-v3.0.0...shapely-codegen-v3.1.0) - 2025-03-31
 
 ### Added

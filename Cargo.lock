@@ -105,7 +105,7 @@ checksum = "b985e394ee53f8e4c547d5c6fa75b83b243ab6f51563a0323f1475fc8abc8e7f"
 
 [[package]]
 name = "shapely"
-version = "3.1.0"
+version = "3.1.1"
 dependencies = [
  "shapely-derive",
  "shapely-spez",
@@ -114,11 +114,11 @@ dependencies = [
 
 [[package]]
 name = "shapely-codegen"
-version = "3.1.0"
+version = "3.1.1"
 
 [[package]]
 name = "shapely-derive"
-version = "3.1.0"
+version = "3.1.1"
 dependencies = [
  "shapely-trait",
  "unsynn",
@@ -126,7 +126,7 @@ dependencies = [
 
 [[package]]
 name = "shapely-json"
-version = "3.1.0"
+version = "3.1.1"
 dependencies = [
  "color-backtrace",
  "ctor",
@@ -138,18 +138,18 @@ dependencies = [
 
 [[package]]
 name = "shapely-opaque"
-version = "3.1.0"
+version = "3.1.1"
 
 [[package]]
 name = "shapely-peek"
-version = "3.1.0"
+version = "3.1.1"
 dependencies = [
  "shapely-trait",
 ]
 
 [[package]]
 name = "shapely-poke"
-version = "3.1.0"
+version = "3.1.1"
 dependencies = [
  "color-backtrace",
  "ctor",
@@ -162,7 +162,7 @@ dependencies = [
 
 [[package]]
 name = "shapely-samplelibc"
-version = "3.1.0"
+version = "3.1.1"
 dependencies = [
  "cc",
  "shapely",
@@ -170,7 +170,7 @@ dependencies = [
 
 [[package]]
 name = "shapely-spez"
-version = "3.1.0"
+version = "3.1.1"
 dependencies = [
  "impls",
  "shapely-opaque",
@@ -179,7 +179,7 @@ dependencies = [
 
 [[package]]
 name = "shapely-trait"
-version = "3.1.0"
+version = "3.1.1"
 dependencies = [
  "shapely-opaque",
  "shapely-spez",

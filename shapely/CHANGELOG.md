@@ -7,6 +7,81 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.1.1](https://github.com/bearcove/shapely/compare/shapely-v3.1.0...shapely-v3.1.1) - 2025-04-05
+
+### Fixed
+
+- fix errors now
+- fix miri/memory problems
+- fix derive probably
+
+### Other
+
+- Add .envrc to try removing rebuilds
+- Shapely is unsafe
+- Fix tests etc.
+- woo everything builds
+- getting there
+- The great split
+- start fixing doc tests
+- Cool, the hacking guide is in
+- 29 tests passed aw yiss
+- clone stuff
+- clone in place => clone into
+- mhmh
+- mhhh getting somewhere
+- fun
+- bigger and bigger
+- switch to btparse
+- time to fix those tests
+- mhmhmh
+- color backtrace in tests please?
+- tests are made to fail
+- mhmh tests are failing huh
+- maps, slowlyl
+- peeking a lotta things
+- more vec stuff
+- okay, debug and default, it's something
+- mhh we regressed
+- Uhhh slices work?
+- well this weirdly works?
+- mhkay
+- traits tests look better
+- more spez is going well
+- mh
+- mhhhmhh
+- mhhhhh it's probably the uninit thing, ngl
+- I'm confused now
+- uhhhh
+- uhhh what
+- weird
+- more tests
+- More tests
+- rename spez to traits
+- mhmhmh
+- Uncomment a bunch of tests
+- Unreasonably happy with that tbh
+- nice nice
+- Use spez-like ideas to set Debug if it's set on the type
+- Well that's not really const
+- yessssss
+- getting somewhere maybe? but only in macros, they weren't joking.
+- mhhh
+- ahhhhh
+- alright, will this work?
+- Mhh doesn't work yet
+- Well the tests do pass
+- welp
+- don't compare strings
+- uncomment some derives
+- so far so god
+- new structure works
+- introduce init_in_place_with_capacity
+- Rname more things for more consistency
+- Move tests to shapely proper
+- whoa hey down to 111 errors
+- Innards => Def
+
 ## [3.1.0](https://github.com/bearcove/shapely/compare/shapely-v3.0.0...shapely-v3.1.0) - 2025-03-31
 
 ### Other

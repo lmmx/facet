@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.1.1](https://github.com/bearcove/shapely/compare/shapely-derive-v3.1.0...shapely-derive-v3.1.1) - 2025-04-05
+
+### Fixed
+
+- fix errors now
+- fix derive probably
+
+### Other
+
+- Shapely is unsafe
+- json tests almost passing
+- errors gone
+- restore json test a little?? not much
+- everything... works?
+- DUMMY
+- 29 tests passed aw yiss
+- clone in place => clone into
+- mhhh getting somewhere
+- fun
+- Add more specializations
+- nice nice
+- I think it works????
+- getting somewhere maybe? but only in macros, they weren't joking.
+- ahhhhh
+- so far so god
+- make everything const??
+- Move tests to shapely proper
+- whoa hey down to 111 errors
+
 ## [3.1.0](https://github.com/bearcove/shapely/compare/shapely-derive-v3.0.0...shapely-derive-v3.1.0) - 2025-03-31
 
 ### Added

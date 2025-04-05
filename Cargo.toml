@@ -15,7 +15,7 @@ members = [
 resolver = "3"
 
 [workspace.package]
-version = "3.1.0"
+version = "3.1.1"
 authors = ["Amos Wenger <amos@bearcove.eu>"]
 edition = "2024"
 rust-version = "1.85"
@@ -34,6 +34,6 @@ keywords = [
 categories = ["encoding", "parsing", "development-tools", "data-structures"]
 
 [workspace.dependencies]
-shapely-trait = { version = "3.1.0", path = "shapely-trait" }
-shapely-derive = { version = "3.1.0", path = "shapely-derive" }
+shapely-trait = { version = "3.1.1", path = "shapely-trait" }
+shapely-derive = { version = "3.1.1", path = "shapely-derive" }
 unsynn = "0.0.25"
