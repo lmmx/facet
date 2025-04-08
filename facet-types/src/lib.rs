@@ -224,6 +224,7 @@ impl Shape {
 
 /// Errors encountered when calling `field_by_index` or `field_by_name`
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum FieldError {
     /// `field_by_index` was called on a dynamic collection, that has no
     /// static fields. a map doesn't have a "first field", it can only
@@ -312,6 +313,7 @@ impl StructDefBuilder {
 
 /// Describes the kind of struct (useful for deserializing)
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+#[non_exhaustive]
 pub enum StructKind {
     /// struct S { t0: T0, t1: T1 }
     Struct,
@@ -696,6 +698,7 @@ impl VariantBuilder {
 
 /// Represents the different kinds of variants that can exist in a Rust enum
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+#[non_exhaustive]
 pub enum VariantKind {
     /// Unit variant (e.g., `None` in Option)
     Unit,
@@ -715,6 +718,7 @@ pub enum VariantKind {
 
 /// All possible representations for Rust enums
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+#[non_exhaustive]
 pub enum EnumRepr {
     /// Default representation (compiler-dependent)
     Default,

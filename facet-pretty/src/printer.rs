@@ -232,6 +232,9 @@ impl PrettyPrinter {
                             };
                             stack.push_back(item);
                         }
+                        _ => {
+                            writeln!(f, "unsupported peek variant: {:?}", item.peek)?;
+                        }
                     }
                 }
                 StackState::ProcessStructField { field_index } => {

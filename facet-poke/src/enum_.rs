@@ -142,6 +142,9 @@ impl<'mem> PokeEnumNoVariant<'mem> {
                         *tag_ptr = discriminant_value as u32;
                     }
                 }
+                _ => {
+                    panic!("Unsupported enum representation: {:?}", self.def.repr);
+                }
             }
         }
 
@@ -211,6 +214,9 @@ impl<'mem> PokeEnum<'mem> {
                 let poke = unsafe { Poke::unchecked_new(field_data, field.shape) };
                 Ok(poke)
             }
+            _ => {
+                panic!("Unsupported enum variant kind: {:?}", variant.kind);
+            }
         }
     }
 
@@ -246,6 +252,9 @@ impl<'mem> PokeEnum<'mem> {
                         );
                     }
                 }
+            }
+            _ => {
+                panic!("Unsupported enum variant kind: {:?}", variant.kind);
             }
         }
     }
@@ -354,12 +363,16 @@ impl Drop for PokeEnum<'_> {
                     }
                 }
             }
+            _ => {
+                panic!("Unsupported enum variant kind: {:?}", variant.kind);
+            }
         }
     }
 }
 
 /// All possible errors when getting a variant by index or by name
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum VariantError {
     /// `variant_by_index` was called with an index that is out of bounds.
     IndexOutOfBounds,

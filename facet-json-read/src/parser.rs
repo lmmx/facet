@@ -12,6 +12,7 @@ pub struct JsonParseError {
 }
 
 #[derive(Debug)]
+#[non_exhaustive]
 pub enum JsonParseErrorKind {
     ExpectedOpeningQuote,
     UnterminatedString,

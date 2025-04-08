@@ -24,6 +24,7 @@ use facet_trait::{Def, OpaqueConst, Shape};
 /// It's possible (in some cases..) to escape the borrow checker by setting `'mem` to `'static`,
 /// in which case, you're entirely on your own.
 #[derive(Clone, Copy)]
+#[non_exhaustive]
 pub enum Peek<'mem> {
     /// cf. [`PeekValue`]
     Value(PeekValue<'mem>),

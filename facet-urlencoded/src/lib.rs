@@ -124,6 +124,7 @@ pub fn from_urlencoded(partial: &mut Partial, input: &str) -> Result<(), UrlEnco
 
 /// Errors that can occur during URL encoded form data deserialization.
 #[derive(Debug)]
+#[non_exhaustive]
 pub enum UrlEncodedError {
     /// The field value couldn't be parsed as a number.
     InvalidNumber(String, String),

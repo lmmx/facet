@@ -119,6 +119,7 @@ fn deserialize_value<'mem>(poke: Poke<'mem>, value: &Yaml) -> Result<Opaque<'mem
             }
         },
         Poke::Enum(_) => todo!(),
+        _ => todo!("unsupported poke type"),
     };
     Ok(opaque)
 }

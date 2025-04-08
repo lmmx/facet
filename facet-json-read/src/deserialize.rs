@@ -219,6 +219,7 @@ fn deserialize_value<'input, 'mem>(
                         let opaque = pe.build_in_place();
                         result = Some(opaque);
                     }
+                    _ => todo!("unsupported poke type"),
                 }
             }
             StackItem::StructField { key } => {

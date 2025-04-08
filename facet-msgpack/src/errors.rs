@@ -1,6 +1,7 @@
 use std::fmt;
 
 #[derive(Debug)]
+#[non_exhaustive]
 /// Errors that can occur during MessagePack encoding/decoding operations
 pub enum Error {
     /// Encountered a MessagePack type that doesn't match the expected type

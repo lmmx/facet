@@ -145,21 +145,21 @@ where
 
     // Format display representation
     if l.as_value().shape().vtable.display.is_some() {
-        facts.insert(Fact::HasDisplay);
+        facts.insert(Fact::Display);
         let display_str = format!("{} vs {}", l.style(remarkable), r.style(remarkable));
         eprintln!("Display:   {}", display_str);
     }
 
     // Format debug representation
     if l.as_value().shape().vtable.debug.is_some() {
-        facts.insert(Fact::HasDebug);
+        facts.insert(Fact::Debug);
         let debug_str = format!("{:?} vs {:?}", l.style(remarkable), r.style(remarkable));
         eprintln!("Debug:     {}", debug_str);
     }
 
     // Test equality
     if let Some(eq_result) = l.as_value().eq(&r.as_value()) {
-        facts.insert(Fact::HasEqualAnd { l_eq_r: eq_result });
+        facts.insert(Fact::EqualAnd { l_eq_r: eq_result });
         let eq_str = format!(
             "{:?} {} {:?}",
             l.style(remarkable),
@@ -171,7 +171,7 @@ where
 
     // Test ordering
     if let Some(cmp_result) = l.as_value().cmp(&r.as_value()) {
-        facts.insert(Fact::HasOrdAnd {
+        facts.insert(Fact::OrdAnd {
             l_ord_r: cmp_result,
         });
         let cmp_symbol = match cmp_result {
@@ -192,14 +192,14 @@ where
     let (poke, _guard) = Poke::alloc::<T>();
     let poke_value = poke.into_value();
     if let Ok(value) = poke_value.default_in_place() {
-        facts.insert(Fact::HasDefault);
+        facts.insert(Fact::Default);
         let peek = unsafe { Peek::unchecked_new(value.as_const(), T::SHAPE) };
         eprintln!("Default:   {}", format!("{:?}", peek).style(remarkable));
     }
 
     // Test clone
     if l.as_value().shape().vtable.clone_into.is_some() {
-        facts.insert(Fact::HasClone);
+        facts.insert(Fact::Clone);
         eprintln!("Clone:     Implemented");
     }
 
@@ -761,13 +761,13 @@ fn test_enums() {
 */
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum Fact {
-    HasDebug,
-    HasDisplay,
-    HasEqualAnd { l_eq_r: bool },
-    HasOrdAnd { l_ord_r: Ordering },
-    HasDefault,
-    HasClone,
+enum Fact {
+    Debug,
+    Display,
+    EqualAnd { l_eq_r: bool },
+    OrdAnd { l_ord_r: Ordering },
+    Default,
+    Clone,
 }
 
 use std::fmt::{Display, Formatter, Result};
@@ -775,14 +775,14 @@ use std::fmt::{Display, Formatter, Result};
 impl Display for Fact {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         match self {
-            Fact::HasDebug => write!(f, "impl Debug"),
-            Fact::HasDisplay => write!(f, "impl Display"),
-            Fact::HasEqualAnd { l_eq_r } => write!(
+            Fact::Debug => write!(f, "impl Debug"),
+            Fact::Display => write!(f, "impl Display"),
+            Fact::EqualAnd { l_eq_r } => write!(
                 f,
                 "impl Equal and l {} r",
                 if *l_eq_r { "==" } else { "!=" }
             ),
-            Fact::HasOrdAnd { l_ord_r } => {
+            Fact::OrdAnd { l_ord_r } => {
                 let ord_str = match l_ord_r {
                     Ordering::Less => "<",
                     Ordering::Equal => "==",
@@ -790,15 +790,9 @@ impl Display for Fact {
                 };
                 write!(f, "impl Ord and l {} r", ord_str)
             }
-            Fact::HasDefault => write!(f, "impl Default"),
-            Fact::HasClone => write!(f, "impl Clone"),
+            Fact::Default => write!(f, "impl Default"),
+            Fact::Clone => write!(f, "impl Clone"),
         }
-    }
-}
-
-impl Fact {
-    pub fn builder() -> FactBuilder {
-        FactBuilder::new()
     }
 }
 
@@ -813,59 +807,59 @@ pub struct FactBuilder {
 }
 
 impl FactBuilder {
-    pub fn new() -> Self {
+    fn new() -> Self {
         Default::default()
     }
 
-    pub fn debug(mut self) -> Self {
+    fn debug(mut self) -> Self {
         self.has_debug = true;
         self
     }
 
-    pub fn display(mut self) -> Self {
+    fn display(mut self) -> Self {
         self.has_display = true;
         self
     }
 
-    pub fn equal_and(mut self, l_eq_r: bool) -> Self {
+    fn equal_and(mut self, l_eq_r: bool) -> Self {
         self.has_equal_and = Some(l_eq_r);
         self
     }
 
-    pub fn ord_and(mut self, l_ord_r: Ordering) -> Self {
+    fn ord_and(mut self, l_ord_r: Ordering) -> Self {
         self.has_ord_and = Some(l_ord_r);
         self
     }
 
-    pub fn default(mut self) -> Self {
+    fn default(mut self) -> Self {
         self.has_default = true;
         self
     }
 
-    pub fn clone(mut self) -> Self {
+    fn clone(mut self) -> Self {
         self.has_clone = true;
         self
     }
 
-    pub fn build(self) -> HashSet<Fact> {
+    fn build(self) -> HashSet<Fact> {
         let mut facts = HashSet::new();
         if self.has_debug {
-            facts.insert(Fact::HasDebug);
+            facts.insert(Fact::Debug);
         }
         if self.has_display {
-            facts.insert(Fact::HasDisplay);
+            facts.insert(Fact::Display);
         }
         if let Some(l_eq_r) = self.has_equal_and {
-            facts.insert(Fact::HasEqualAnd { l_eq_r });
+            facts.insert(Fact::EqualAnd { l_eq_r });
         }
         if let Some(l_ord_r) = self.has_ord_and {
-            facts.insert(Fact::HasOrdAnd { l_ord_r });
+            facts.insert(Fact::OrdAnd { l_ord_r });
         }
         if self.has_default {
-            facts.insert(Fact::HasDefault);
+            facts.insert(Fact::Default);
         }
         if self.has_clone {
-            facts.insert(Fact::HasClone);
+            facts.insert(Fact::Clone);
         }
         facts
     }

@@ -142,6 +142,7 @@ pub fn to_json<W: Write>(peek: Peek<'_>, writer: &mut W, indent: bool) -> io::Re
                             });
                         }
                     }
+                    _ => todo!("unsupported peek type: {:?}", peek),
                 }
             }
             StackItem::StructField {

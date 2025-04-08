@@ -25,6 +25,7 @@ mod enum_;
 pub use enum_::*;
 
 /// Allows writing values of different kinds.
+#[non_exhaustive]
 pub enum Poke<'mem> {
     /// A scalar value. See [`PokeValue`].
     Scalar(PokeValue<'mem>),
