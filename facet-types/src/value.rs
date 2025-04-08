@@ -499,6 +499,153 @@ impl ValueVTableBuilder {
         }
     }
 
+    /// Sets the type name function for this builder.
+    pub const fn type_name(mut self, type_name: TypeNameFn) -> Self {
+        self.type_name = Some(type_name);
+        self
+    }
+
+    /// Sets the display function for this builder.
+    pub const fn display(mut self, display: DisplayFn) -> Self {
+        self.display = Some(display);
+        self
+    }
+
+    /// Sets the display function for this builder if Some.
+    pub const fn display_maybe(mut self, display: Option<DisplayFn>) -> Self {
+        self.display = display;
+        self
+    }
+
+    /// Sets the debug function for this builder.
+    pub const fn debug(mut self, debug: DebugFn) -> Self {
+        self.debug = Some(debug);
+        self
+    }
+
+    /// Sets the debug function for this builder if Some.
+    pub const fn debug_maybe(mut self, debug: Option<DebugFn>) -> Self {
+        self.debug = debug;
+        self
+    }
+
+    /// Sets the default_in_place function for this builder.
+    pub const fn default_in_place(mut self, default_in_place: DefaultInPlaceFn) -> Self {
+        self.default_in_place = Some(default_in_place);
+        self
+    }
+
+    /// Sets the default_in_place function for this builder if Some.
+    pub const fn default_in_place_maybe(
+        mut self,
+        default_in_place: Option<DefaultInPlaceFn>,
+    ) -> Self {
+        self.default_in_place = default_in_place;
+        self
+    }
+
+    /// Sets the clone_into function for this builder.
+    pub const fn clone_into(mut self, clone_into: CloneIntoFn) -> Self {
+        self.clone_into = Some(clone_into);
+        self
+    }
+
+    /// Sets the clone_into function for this builder if Some.
+    pub const fn clone_into_maybe(mut self, clone_into: Option<CloneIntoFn>) -> Self {
+        self.clone_into = clone_into;
+        self
+    }
+
+    /// Sets the marker traits for this builder.
+    pub const fn marker_traits(mut self, marker_traits: MarkerTraits) -> Self {
+        self.marker_traits = marker_traits;
+        self
+    }
+
+    /// Sets the eq function for this builder.
+    pub const fn eq(mut self, eq: PartialEqFn) -> Self {
+        self.eq = Some(eq);
+        self
+    }
+
+    /// Sets the eq function for this builder if Some.
+    pub const fn eq_maybe(mut self, eq: Option<PartialEqFn>) -> Self {
+        self.eq = eq;
+        self
+    }
+
+    /// Sets the partial_ord function for this builder.
+    pub const fn partial_ord(mut self, partial_ord: PartialOrdFn) -> Self {
+        self.partial_ord = Some(partial_ord);
+        self
+    }
+
+    /// Sets the partial_ord function for this builder if Some.
+    pub const fn partial_ord_maybe(mut self, partial_ord: Option<PartialOrdFn>) -> Self {
+        self.partial_ord = partial_ord;
+        self
+    }
+
+    /// Sets the ord function for this builder.
+    pub const fn ord(mut self, ord: CmpFn) -> Self {
+        self.ord = Some(ord);
+        self
+    }
+
+    /// Sets the ord function for this builder if Some.
+    pub const fn ord_maybe(mut self, ord: Option<CmpFn>) -> Self {
+        self.ord = ord;
+        self
+    }
+
+    /// Sets the hash function for this builder.
+    pub const fn hash(mut self, hash: HashFn) -> Self {
+        self.hash = Some(hash);
+        self
+    }
+
+    /// Sets the hash function for this builder if Some.
+    pub const fn hash_maybe(mut self, hash: Option<HashFn>) -> Self {
+        self.hash = hash;
+        self
+    }
+
+    /// Sets the drop_in_place function for this builder.
+    pub const fn drop_in_place(mut self, drop_in_place: DropInPlaceFn) -> Self {
+        self.drop_in_place = Some(drop_in_place);
+        self
+    }
+
+    /// Sets the drop_in_place function for this builder if Some.
+    pub const fn drop_in_place_maybe(mut self, drop_in_place: Option<DropInPlaceFn>) -> Self {
+        self.drop_in_place = drop_in_place;
+        self
+    }
+
+    /// Sets the parse function for this builder.
+    pub const fn parse(mut self, parse: ParseFn) -> Self {
+        self.parse = Some(parse);
+        self
+    }
+
+    /// Sets the parse function for this builder if Some.
+    pub const fn parse_maybe(mut self, parse: Option<ParseFn>) -> Self {
+        self.parse = parse;
+        self
+    }
+
+    /// Sets the try_from function for this builder.
+    pub const fn try_from(mut self, try_from: TryFromFn) -> Self {
+        self.try_from = Some(try_from);
+        self
+    }
+
+    /// Sets the try_from function for this builder if Some.
+    pub const fn try_from_maybe(mut self, try_from: Option<TryFromFn>) -> Self {
+        self.try_from = try_from;
+        self
+    }
+
     /// Builds the [`ValueVTable`] from the current state of the builder.
     pub const fn build(self) -> ValueVTable {
         ValueVTable {

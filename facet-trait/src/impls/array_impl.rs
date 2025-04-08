@@ -11,8 +11,9 @@ where
             .layout(Layout::new::<[T; 1]>())
             .vtable(
                 &const {
-                    ValueVTable {
-                        type_name: |f, opts| {
+                    let mut builder = ValueVTable::builder()
+                        .marker_traits(T::SHAPE.vtable.marker_traits)
+                        .type_name(|f, opts| {
                             if let Some(opts) = opts.for_children() {
                                 write!(f, "[")?;
                                 (T::SHAPE.vtable.type_name)(f, opts)?;
@@ -20,79 +21,87 @@ where
                             } else {
                                 write!(f, "[⋯; 1]")
                             }
-                        },
-                        display: None,
-                        debug: if T::SHAPE.vtable.debug.is_some() {
-                            Some(|value, f| {
-                                let value = unsafe { value.as_ref::<[T; 1]>() };
-                                write!(f, "[")?;
-                                unsafe {
-                                    (T::SHAPE.vtable.debug.unwrap_unchecked())(
-                                        OpaqueConst::from_ref(&value[0]),
-                                        f,
-                                    )?;
-                                }
-                                write!(f, "]")
-                            })
-                        } else {
-                            None
-                        },
-                        default_in_place: if T::SHAPE.vtable.default_in_place.is_some() {
-                            Some(|target| unsafe {
-                                let t_dip = T::SHAPE.vtable.default_in_place.unwrap_unchecked();
-                                (t_dip)(target.field_uninit(0))
-                            })
-                        } else {
-                            None
-                        },
-                        clone_into: if T::SHAPE.vtable.clone_into.is_some() {
-                            Some(|src, dst| unsafe {
-                                let t_cip = T::SHAPE.vtable.clone_into.unwrap_unchecked();
-                                (t_cip)(
-                                    OpaqueConst::from_ref(&src.as_ref::<[T; 1]>()[0]),
-                                    dst.field_uninit(0),
-                                )
-                            })
-                        } else {
-                            None
-                        },
-                        marker_traits: T::SHAPE.vtable.marker_traits,
-                        eq: T::SHAPE.vtable.eq,
-                        partial_ord: if T::SHAPE.vtable.partial_ord.is_some() {
-                            Some(|a, b| {
-                                let a = unsafe { a.as_ref::<[T; 1]>() };
-                                let b = unsafe { b.as_ref::<[T; 1]>() };
-                                unsafe {
-                                    (T::SHAPE.vtable.partial_ord.unwrap_unchecked())(
-                                        OpaqueConst::from_ref(&a[0]),
-                                        OpaqueConst::from_ref(&b[0]),
-                                    )
-                                }
-                            })
-                        } else {
-                            None
-                        },
-                        ord: T::SHAPE.vtable.ord,
-                        hash: if T::SHAPE.vtable.hash.is_some() {
-                            Some(|value, state, hasher| {
-                                let value = unsafe { value.as_ref::<[T; 1]>() };
-                                unsafe {
-                                    (T::SHAPE.vtable.hash.unwrap_unchecked())(
-                                        OpaqueConst::from_ref(&value[0]),
-                                        state,
-                                        hasher,
-                                    )
-                                }
-                            })
-                        } else {
-                            None
-                        },
-                        drop_in_place: Some(|value| unsafe {
+                        })
+                        .drop_in_place(|value| unsafe {
                             std::ptr::drop_in_place(value.as_mut::<[T; 1]>());
-                        }),
-                        parse: None,
-                        try_from: None,
+                        });
+                    if T::SHAPE.vtable.debug.is_some() {
+                        builder = builder.debug(|value, f| {
+                            let value = unsafe { value.as_ref::<[T; 1]>() };
+                            write!(f, "[")?;
+                            unsafe {
+                                (T::SHAPE.vtable.debug.unwrap_unchecked())(
+                                    OpaqueConst::from_ref(&value[0]),
+                                    f,
+                                )?;
+                            }
+                            write!(f, "]")
+                        });
                     }
+                    if T::SHAPE.vtable.eq.is_some() {
+                        builder = builder.eq(|a, b| {
+                            let a = unsafe { a.as_ref::<[T; 1]>() };
+                            let b = unsafe { b.as_ref::<[T; 1]>() };
+                            unsafe {
+                                (T::SHAPE.vtable.eq.unwrap_unchecked())(
+                                    OpaqueConst::from_ref(&a[0]),
+                                    OpaqueConst::from_ref(&b[0]),
+                                )
+                            }
+                        });
+                    }
+                    if T::SHAPE.vtable.default_in_place.is_some() {
+                        builder = builder.default_in_place(|target| unsafe {
+                            let t_dip = T::SHAPE.vtable.default_in_place.unwrap_unchecked();
+                            (t_dip)(target.field_uninit(0))
+                        });
+                    }
+                    if T::SHAPE.vtable.clone_into.is_some() {
+                        builder = builder.clone_into(|src, dst| unsafe {
+                            let t_cip = T::SHAPE.vtable.clone_into.unwrap_unchecked();
+                            (t_cip)(
+                                OpaqueConst::from_ref(&src.as_ref::<[T; 1]>()[0]),
+                                dst.field_uninit(0),
+                            )
+                        });
+                    }
+                    if T::SHAPE.vtable.partial_ord.is_some() {
+                        builder = builder.partial_ord(|a, b| {
+                            let a = unsafe { a.as_ref::<[T; 1]>() };
+                            let b = unsafe { b.as_ref::<[T; 1]>() };
+                            unsafe {
+                                (T::SHAPE.vtable.partial_ord.unwrap_unchecked())(
+                                    OpaqueConst::from_ref(&a[0]),
+                                    OpaqueConst::from_ref(&b[0]),
+                                )
+                            }
+                        });
+                    }
+                    if T::SHAPE.vtable.ord.is_some() {
+                        builder = builder.ord(|a, b| {
+                            let a = unsafe { a.as_ref::<[T; 1]>() };
+                            let b = unsafe { b.as_ref::<[T; 1]>() };
+                            unsafe {
+                                (T::SHAPE.vtable.ord.unwrap_unchecked())(
+                                    OpaqueConst::from_ref(&a[0]),
+                                    OpaqueConst::from_ref(&b[0]),
+                                )
+                            }
+                        });
+                    }
+                    if T::SHAPE.vtable.hash.is_some() {
+                        builder = builder.hash(|value, state, hasher| {
+                            let value = unsafe { value.as_ref::<[T; 1]>() };
+                            unsafe {
+                                (T::SHAPE.vtable.hash.unwrap_unchecked())(
+                                    OpaqueConst::from_ref(&value[0]),
+                                    state,
+                                    hasher,
+                                )
+                            }
+                        });
+                    }
+                    builder.build()
                 },
             )
             .def(Def::List(ListDef {
