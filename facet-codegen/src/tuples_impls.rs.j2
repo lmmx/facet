@@ -125,13 +125,13 @@ where
                 builder.build()
             })
             .def(Def::Struct({
-                let builder = StructDef::builder()
+                StructDef::builder()
                     .kind(StructKind::Tuple)
                     .fields(&const { [
                         {% for i in range(n) %}field!({{ i }}, {{ type_name }},){% if not loop.last %},
                         {% endif %}{% endfor %}
-                    ] });
-                unsafe { std::mem::transmute(builder) }
+                    ] })
+                    .build()
             }))
             .build()
     };

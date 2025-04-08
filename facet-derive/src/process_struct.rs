@@ -43,12 +43,12 @@ pub(crate) fn process_struct(parsed: Struct) -> proc_macro::TokenStream {
 
             // Generate each field definition
             format!(
-                "facet::Field {{
-                name: \"{field_name}\",
-                shape: facet::shape_of(&|s: {struct_name}| s.{field_name}),
-                offset: ::std::mem::offset_of!({struct_name}, {field_name}),
-                flags: {flags},
-            }}"
+                "facet::Field::builder()
+                .name(\"{field_name}\")
+                .shape(facet::shape_of(&|s: {struct_name}| s.{field_name}))
+                .offset(::std::mem::offset_of!({struct_name}, {field_name}))
+                .flags({flags})
+                .build()"
             )
         })
         .collect::<Vec<String>>()
@@ -77,10 +77,10 @@ unsafe impl facet::Facet for {struct_name} {{
                 {struct_name},
                 |f, _opts| std::fmt::Write::write_str(f, "{struct_name}")
             ))
-            .def(facet::Def::Struct(facet::StructDef {{
-                kind: facet::StructKind::Struct,
-                fields: FIELDS,
-            }}))
+            .def(facet::Def::Struct(facet::StructDef::builder()
+                .kind(facet::StructKind::Struct)
+                .fields(FIELDS)
+                .build()))
             .build()
     }};
 }}

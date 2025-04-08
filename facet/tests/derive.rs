@@ -18,7 +18,7 @@ fn simple_struct() {
         assert_eq!(shape.layout.size(), 32);
         assert_eq!(shape.layout.align(), 8);
 
-        if let Def::Struct(StructDef { kind, fields }) = shape.def {
+        if let Def::Struct(StructDef { kind, fields, .. }) = shape.def {
             assert_eq!(kind, StructKind::Struct);
             assert_eq!(fields.len(), 2);
 
