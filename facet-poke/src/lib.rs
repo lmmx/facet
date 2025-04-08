@@ -90,6 +90,7 @@ impl<'mem> Poke<'mem> {
             Def::Enum(enum_def) => {
                 Poke::Enum(unsafe { PokeEnumNoVariant::new(data, shape, enum_def) })
             }
+            _ => todo!("unsupported def: {:?}", shape.def),
         }
     }
 

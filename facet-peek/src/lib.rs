@@ -74,6 +74,7 @@ impl<'mem> Peek<'mem> {
             Def::List(def) => Peek::List(PeekList::new(value, def)),
             Def::Scalar { .. } => Peek::Value(value),
             Def::Enum { .. } => todo!(),
+            _ => todo!("unsupported def: {:?}", shape.def),
         }
     }
 

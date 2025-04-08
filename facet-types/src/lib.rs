@@ -792,6 +792,7 @@ impl ScalarDefBuilder {
 
 /// The definition of a shape: is it more like a struct, a map, a list?
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+#[non_exhaustive]
 pub enum Def {
     /// Scalar — those don't have a def, they're not composed of other things.
     /// You can interact with them through [`ValueVTable`].
@@ -822,6 +823,7 @@ pub enum Def {
 
 /// A characteristic a shape can have
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[non_exhaustive]
 pub enum Characteristic {
     // Marker traits
     /// Implements Send
