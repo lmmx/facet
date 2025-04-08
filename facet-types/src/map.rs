@@ -68,12 +68,61 @@ pub type MapIterDeallocFn = for<'iter> unsafe fn(iter: Opaque<'iter>);
 
 /// VTable for an iterator over a map
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
+#[non_exhaustive]
 pub struct MapIterVTable {
     /// cf. [`MapIterNextFn`]
     pub next: MapIterNextFn,
 
     /// cf. [`MapIterDeallocFn`]
     pub dealloc: MapIterDeallocFn,
+}
+
+impl MapIterVTable {
+    /// Returns a builder for MapIterVTable
+    pub const fn builder() -> MapIterVTableBuilder {
+        MapIterVTableBuilder::new()
+    }
+}
+
+/// Builds a [`MapIterVTable`]
+pub struct MapIterVTableBuilder {
+    next: Option<MapIterNextFn>,
+    dealloc: Option<MapIterDeallocFn>,
+}
+
+impl MapIterVTableBuilder {
+    /// Creates a new [`MapIterVTableBuilder`] with all fields set to `None`.
+    #[allow(clippy::new_without_default)]
+    pub const fn new() -> Self {
+        Self {
+            next: None,
+            dealloc: None,
+        }
+    }
+
+    /// Sets the next field
+    pub const fn next(mut self, f: MapIterNextFn) -> Self {
+        self.next = Some(f);
+        self
+    }
+
+    /// Sets the dealloc field
+    pub const fn dealloc(mut self, f: MapIterDeallocFn) -> Self {
+        self.dealloc = Some(f);
+        self
+    }
+
+    /// Builds the [`MapIterVTable`] from the current state of the builder.
+    ///
+    /// # Panics
+    ///
+    /// This method will panic if any of the required fields are `None`.
+    pub const fn build(self) -> MapIterVTable {
+        MapIterVTable {
+            next: self.next.unwrap(),
+            dealloc: self.dealloc.unwrap(),
+        }
+    }
 }
 
 /// Virtual table for a Map<K, V>
@@ -135,37 +184,37 @@ impl MapVTableBuilder {
     }
 
     /// Sets the init_in_place_with_capacity_fn field
-    pub const fn init_in_place_with_capacity_fn(mut self, f: MapInitInPlaceWithCapacityFn) -> Self {
+    pub const fn init_in_place_with_capacity(mut self, f: MapInitInPlaceWithCapacityFn) -> Self {
         self.init_in_place_with_capacity_fn = Some(f);
         self
     }
 
     /// Sets the insert_fn field
-    pub const fn insert_fn(mut self, f: MapInsertFn) -> Self {
+    pub const fn insert(mut self, f: MapInsertFn) -> Self {
         self.insert_fn = Some(f);
         self
     }
 
     /// Sets the len_fn field
-    pub const fn len_fn(mut self, f: MapLenFn) -> Self {
+    pub const fn len(mut self, f: MapLenFn) -> Self {
         self.len_fn = Some(f);
         self
     }
 
     /// Sets the contains_key_fn field
-    pub const fn contains_key_fn(mut self, f: MapContainsKeyFn) -> Self {
+    pub const fn contains_key(mut self, f: MapContainsKeyFn) -> Self {
         self.contains_key_fn = Some(f);
         self
     }
 
     /// Sets the get_value_ptr_fn field
-    pub const fn get_value_ptr_fn(mut self, f: MapGetValuePtrFn) -> Self {
+    pub const fn get_value_ptr(mut self, f: MapGetValuePtrFn) -> Self {
         self.get_value_ptr_fn = Some(f);
         self
     }
 
     /// Sets the iter_fn field
-    pub const fn iter_fn(mut self, f: MapIterFn) -> Self {
+    pub const fn iter(mut self, f: MapIterFn) -> Self {
         self.iter_fn = Some(f);
         self
     }
