@@ -454,4 +454,67 @@ impl ValueVTable {
     pub fn is_copy(&self) -> bool {
         self.marker_traits.contains(MarkerTraits::COPY)
     }
+
+    /// Creates a new [`ValueVTableBuilder`]
+    pub const fn builder() -> ValueVTableBuilder {
+        ValueVTableBuilder::new()
+    }
+}
+
+/// Builds a [`ValueVTable`]
+pub struct ValueVTableBuilder {
+    type_name: Option<TypeNameFn>,
+    display: Option<DisplayFn>,
+    debug: Option<DebugFn>,
+    default_in_place: Option<DefaultInPlaceFn>,
+    clone_into: Option<CloneIntoFn>,
+    marker_traits: MarkerTraits,
+    eq: Option<PartialEqFn>,
+    partial_ord: Option<PartialOrdFn>,
+    ord: Option<CmpFn>,
+    hash: Option<HashFn>,
+    drop_in_place: Option<DropInPlaceFn>,
+    parse: Option<ParseFn>,
+    try_from: Option<TryFromFn>,
+}
+
+impl ValueVTableBuilder {
+    /// Creates a new [`ValueVTableBuilder`] with all fields set to `None`.
+    #[allow(clippy::new_without_default)]
+    pub const fn new() -> Self {
+        Self {
+            type_name: None,
+            display: None,
+            debug: None,
+            default_in_place: None,
+            clone_into: None,
+            marker_traits: MarkerTraits::empty(),
+            eq: None,
+            partial_ord: None,
+            ord: None,
+            hash: None,
+            drop_in_place: None,
+            parse: None,
+            try_from: None,
+        }
+    }
+
+    /// Builds the [`ValueVTable`] from the current state of the builder.
+    pub const fn build(self) -> ValueVTable {
+        ValueVTable {
+            type_name: self.type_name.unwrap(),
+            display: self.display,
+            debug: self.debug,
+            default_in_place: self.default_in_place,
+            clone_into: self.clone_into,
+            marker_traits: self.marker_traits,
+            eq: self.eq,
+            partial_ord: self.partial_ord,
+            ord: self.ord,
+            hash: self.hash,
+            drop_in_place: self.drop_in_place,
+            parse: self.parse,
+            try_from: self.try_from,
+        }
+    }
 }

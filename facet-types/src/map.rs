@@ -100,3 +100,96 @@ pub struct MapVTable {
     /// Virtual table for map iterator operations
     pub iter_vtable: MapIterVTable,
 }
+
+impl MapVTable {
+    /// Returns a builder for MapVTable
+    pub const fn builder() -> MapVTableBuilder {
+        MapVTableBuilder::new()
+    }
+}
+
+/// Builds a [`MapVTable`]
+pub struct MapVTableBuilder {
+    init_in_place_with_capacity_fn: Option<MapInitInPlaceWithCapacityFn>,
+    insert_fn: Option<MapInsertFn>,
+    len_fn: Option<MapLenFn>,
+    contains_key_fn: Option<MapContainsKeyFn>,
+    get_value_ptr_fn: Option<MapGetValuePtrFn>,
+    iter_fn: Option<MapIterFn>,
+    iter_vtable: Option<MapIterVTable>,
+}
+
+impl MapVTableBuilder {
+    /// Creates a new [`MapVTableBuilder`] with all fields set to `None`.
+    #[allow(clippy::new_without_default)]
+    pub const fn new() -> Self {
+        Self {
+            init_in_place_with_capacity_fn: None,
+            insert_fn: None,
+            len_fn: None,
+            contains_key_fn: None,
+            get_value_ptr_fn: None,
+            iter_fn: None,
+            iter_vtable: None,
+        }
+    }
+
+    /// Sets the init_in_place_with_capacity_fn field
+    pub const fn init_in_place_with_capacity_fn(mut self, f: MapInitInPlaceWithCapacityFn) -> Self {
+        self.init_in_place_with_capacity_fn = Some(f);
+        self
+    }
+
+    /// Sets the insert_fn field
+    pub const fn insert_fn(mut self, f: MapInsertFn) -> Self {
+        self.insert_fn = Some(f);
+        self
+    }
+
+    /// Sets the len_fn field
+    pub const fn len_fn(mut self, f: MapLenFn) -> Self {
+        self.len_fn = Some(f);
+        self
+    }
+
+    /// Sets the contains_key_fn field
+    pub const fn contains_key_fn(mut self, f: MapContainsKeyFn) -> Self {
+        self.contains_key_fn = Some(f);
+        self
+    }
+
+    /// Sets the get_value_ptr_fn field
+    pub const fn get_value_ptr_fn(mut self, f: MapGetValuePtrFn) -> Self {
+        self.get_value_ptr_fn = Some(f);
+        self
+    }
+
+    /// Sets the iter_fn field
+    pub const fn iter_fn(mut self, f: MapIterFn) -> Self {
+        self.iter_fn = Some(f);
+        self
+    }
+
+    /// Sets the iter_vtable field
+    pub const fn iter_vtable(mut self, vtable: MapIterVTable) -> Self {
+        self.iter_vtable = Some(vtable);
+        self
+    }
+
+    /// Builds the [`MapVTable`] from the current state of the builder.
+    ///
+    /// # Panics
+    ///
+    /// This method will panic if any of the required fields are `None`.
+    pub const fn build(self) -> MapVTable {
+        MapVTable {
+            init_in_place_with_capacity_fn: self.init_in_place_with_capacity_fn.unwrap(),
+            insert_fn: self.insert_fn.unwrap(),
+            len_fn: self.len_fn.unwrap(),
+            contains_key_fn: self.contains_key_fn.unwrap(),
+            get_value_ptr_fn: self.get_value_ptr_fn.unwrap(),
+            iter_fn: self.iter_fn.unwrap(),
+            iter_vtable: self.iter_vtable.unwrap(),
+        }
+    }
+}

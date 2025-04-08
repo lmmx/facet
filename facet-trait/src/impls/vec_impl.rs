@@ -109,29 +109,31 @@ where
                 },
             )
             .def(Def::List(ListDef {
-                vtable: &ListVTable {
-                    init_in_place_with_capacity: |data, capacity| unsafe {
-                        Ok(data.write(Self::with_capacity(capacity)))
-                    },
-                    push: |ptr, item| unsafe {
-                        let vec = ptr.as_mut::<Vec<T>>();
-                        let item = item.read::<T>();
-                        (*vec).push(item);
-                    },
-                    len: |ptr| unsafe {
-                        let vec = ptr.as_ref::<Vec<T>>();
-                        vec.len()
-                    },
-                    get_item_ptr: |ptr, index| unsafe {
-                        let vec = ptr.as_ref::<Vec<T>>();
-                        let len = vec.len();
-                        if index >= len {
-                            panic!(
-                                "Index out of bounds: the len is {len} but the index is {index}"
-                            );
-                        }
-                        OpaqueConst::new_unchecked(vec.as_ptr().add(index))
-                    },
+                vtable: &const {
+                    ListVTable::builder()
+                        .init_in_place_with_capacity(|data, capacity| unsafe {
+                            Ok(data.write(Self::with_capacity(capacity)))
+                        })
+                        .push(|ptr, item| unsafe {
+                            let vec = ptr.as_mut::<Vec<T>>();
+                            let item = item.read::<T>();
+                            (*vec).push(item);
+                        })
+                        .len(|ptr| unsafe {
+                            let vec = ptr.as_ref::<Vec<T>>();
+                            vec.len()
+                        })
+                        .get_item_ptr(|ptr, index| unsafe {
+                            let vec = ptr.as_ref::<Vec<T>>();
+                            let len = vec.len();
+                            if index >= len {
+                                panic!(
+                                    "Index out of bounds: the len is {len} but the index is {index}"
+                                );
+                            }
+                            OpaqueConst::new_unchecked(vec.as_ptr().add(index))
+                        })
+                        .build()
                 },
                 t: T::SHAPE,
             }))

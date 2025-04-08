@@ -96,18 +96,22 @@ where
                 },
             )
             .def(Def::List(ListDef {
-                vtable: &ListVTable {
-                    init_in_place_with_capacity: |_, _| Err(()),
-                    push: |_, _| {
-                        panic!("Cannot push to [T; 1]");
-                    },
-                    len: |_| 1,
-                    get_item_ptr: |ptr, index| unsafe {
-                        if index >= 1 {
-                            panic!("Index out of bounds: the len is 1 but the index is {index}");
-                        }
-                        OpaqueConst::new_unchecked(ptr.as_ptr::<[T; 1]>())
-                    },
+                vtable: &const {
+                    ListVTable::builder()
+                        .init_in_place_with_capacity(|_, _| Err(()))
+                        .push(|_, _| {
+                            panic!("Cannot push to [T; 1]");
+                        })
+                        .len(|_| 1)
+                        .get_item_ptr(|ptr, index| unsafe {
+                            if index >= 1 {
+                                panic!(
+                                    "Index out of bounds: the len is 1 but the index is {index}"
+                                );
+                            }
+                            OpaqueConst::new_unchecked(ptr.as_ptr::<[T; 1]>())
+                        })
+                        .build()
                 },
                 t: T::SHAPE,
             }))

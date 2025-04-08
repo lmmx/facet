@@ -10,25 +10,27 @@ where
         Shape::builder()
             .layout(Layout::new::<&[T]>())
             .def(Def::List(ListDef {
-                vtable: &ListVTable {
-                    init_in_place_with_capacity: |_, _| Err(()),
-                    push: |_, _| {
-                        panic!("Cannot push to &[T]");
-                    },
-                    len: |ptr| unsafe {
-                        let slice = ptr.as_ref::<&[T]>();
-                        slice.len()
-                    },
-                    get_item_ptr: |ptr, index| unsafe {
-                        let slice = ptr.as_ref::<&[T]>();
-                        let len = slice.len();
-                        if index >= len {
-                            panic!(
-                                "Index out of bounds: the len is {len} but the index is {index}"
-                            );
-                        }
-                        OpaqueConst::new_unchecked(slice.as_ptr().add(index))
-                    },
+                vtable: &const {
+                    ListVTable::builder()
+                        .init_in_place_with_capacity(|_, _| Err(()))
+                        .push(|_, _| {
+                            panic!("Cannot push to &[T]");
+                        })
+                        .len(|ptr| unsafe {
+                            let slice = ptr.as_ref::<&[T]>();
+                            slice.len()
+                        })
+                        .get_item_ptr(|ptr, index| unsafe {
+                            let slice = ptr.as_ref::<&[T]>();
+                            let len = slice.len();
+                            if index >= len {
+                                panic!(
+                                    "Index out of bounds: the len is {len} but the index is {index}"
+                                );
+                            }
+                            OpaqueConst::new_unchecked(slice.as_ptr().add(index))
+                        })
+                        .build()
                 },
                 t: T::SHAPE,
             }))
