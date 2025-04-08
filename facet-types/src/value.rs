@@ -391,6 +391,7 @@ pub const fn debug_fn_for<T: std::fmt::Debug>() -> Option<DebugFn> {
 
 /// VTable for common operations that can be performed on any shape
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[non_exhaustive]
 pub struct ValueVTable {
     /// cf. [`TypeNameFn`]
     pub type_name: TypeNameFn,

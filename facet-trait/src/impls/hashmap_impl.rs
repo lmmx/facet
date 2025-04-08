@@ -28,46 +28,8 @@ where
             .layout(Layout::new::<HashMap<K, V>>())
             .vtable(
                 &const {
-                    ValueVTable {
-                        type_name: |f, opts| {
-                            if let Some(opts) = opts.for_children() {
-                                write!(f, "HashMap<")?;
-                                (K::SHAPE.vtable.type_name)(f, opts)?;
-                                write!(f, ", ")?;
-                                (V::SHAPE.vtable.type_name)(f, opts)?;
-                                write!(f, ">")
-                            } else {
-                                write!(f, "HashMap<⋯>")
-                            }
-                        },
-                        display: None,
-                        debug: if K::SHAPE.vtable.debug.is_some() && V::SHAPE.vtable.debug.is_some()
-                        {
-                            Some(|value, f| unsafe {
-                                let value = value.as_ref::<HashMap<K, V>>();
-
-                                let k_debug = K::SHAPE.vtable.debug.unwrap_unchecked();
-                                let v_debug = V::SHAPE.vtable.debug.unwrap_unchecked();
-
-                                write!(f, "{{")?;
-                                for (i, (key, val)) in value.iter().enumerate() {
-                                    if i > 0 {
-                                        write!(f, ", ")?;
-                                    }
-                                    (k_debug)(OpaqueConst::from_ref(key), f)?;
-                                    write!(f, ": ")?;
-                                    (v_debug)(OpaqueConst::from_ref(val), f)?;
-                                }
-                                write!(f, "}}")
-                            })
-                        } else {
-                            None
-                        },
-                        default_in_place: Some(|target| unsafe { target.write(Self::default()) }),
-                        clone_into: Some(|src, dst| unsafe {
-                            dst.write(src.as_ref::<HashMap<K, V>>())
-                        }),
-                        marker_traits: {
+                    let mut builder = ValueVTable::builder()
+                        .marker_traits({
                             let mut traits = MarkerTraits::empty();
                             if K::SHAPE.vtable.marker_traits.contains(MarkerTraits::SEND)
                                 && V::SHAPE.vtable.marker_traits.contains(MarkerTraits::SEND)
@@ -85,66 +47,83 @@ where
                                 traits = traits.union(MarkerTraits::EQ);
                             }
                             traits
-                        },
-                        eq: if K::SHAPE.vtable.eq.is_some() && V::SHAPE.vtable.eq.is_some() {
-                            Some(|a, b| unsafe {
-                                let a = a.as_ref::<HashMap<K, V>>();
-                                let b = b.as_ref::<HashMap<K, V>>();
-
-                                let k_eq = K::SHAPE.vtable.eq.unwrap_unchecked();
-                                let v_eq = V::SHAPE.vtable.eq.unwrap_unchecked();
-
-                                a.len() == b.len()
-                                    && a.iter().all(|(key_a, val_a)| {
-                                        b.get(key_a).is_some_and(|val_b| {
-                                            (k_eq)(
-                                                OpaqueConst::from_ref(key_a),
-                                                OpaqueConst::from_ref(key_a),
-                                            ) && (v_eq)(
-                                                OpaqueConst::from_ref(val_a),
-                                                OpaqueConst::from_ref(val_b),
-                                            )
-                                        })
-                                    })
-                            })
-                        } else {
-                            None
-                        },
-                        ord: None,
-                        partial_ord: None,
-                        hash: if K::SHAPE.vtable.hash.is_some() && V::SHAPE.vtable.hash.is_some() {
-                            Some(|value, hasher_this, hasher_write_fn| unsafe {
-                                use crate::HasherProxy;
-                                let map = value.as_ref::<HashMap<K, V>>();
-
-                                let k_hash = K::SHAPE.vtable.hash.unwrap_unchecked();
-                                let v_hash = V::SHAPE.vtable.hash.unwrap_unchecked();
-                                let mut hasher = HasherProxy::new(hasher_this, hasher_write_fn);
-
-                                // Hash length and entries
-                                map.len().hash(&mut hasher);
-                                for (k, v) in map {
-                                    (k_hash)(
-                                        OpaqueConst::from_ref(k),
-                                        hasher_this,
-                                        hasher_write_fn,
-                                    );
-                                    (v_hash)(
-                                        OpaqueConst::from_ref(v),
-                                        hasher_this,
-                                        hasher_write_fn,
-                                    );
-                                }
-                            })
-                        } else {
-                            None
-                        },
-                        drop_in_place: Some(|value| unsafe {
+                        })
+                        .type_name(|f, opts| {
+                            if let Some(opts) = opts.for_children() {
+                                write!(f, "HashMap<")?;
+                                (K::SHAPE.vtable.type_name)(f, opts)?;
+                                write!(f, ", ")?;
+                                (V::SHAPE.vtable.type_name)(f, opts)?;
+                                write!(f, ">")
+                            } else {
+                                write!(f, "HashMap<⋯>")
+                            }
+                        })
+                        .drop_in_place(|value| unsafe {
                             std::ptr::drop_in_place(value.as_mut::<HashMap<K, V>>());
-                        }),
-                        parse: None,
-                        try_from: None,
+                        });
+
+                    if K::SHAPE.vtable.debug.is_some() && V::SHAPE.vtable.debug.is_some() {
+                        builder = builder.debug(|value, f| unsafe {
+                            let value = value.as_ref::<HashMap<K, V>>();
+                            let k_debug = K::SHAPE.vtable.debug.unwrap_unchecked();
+                            let v_debug = V::SHAPE.vtable.debug.unwrap_unchecked();
+                            write!(f, "{{")?;
+                            for (i, (key, val)) in value.iter().enumerate() {
+                                if i > 0 {
+                                    write!(f, ", ")?;
+                                }
+                                (k_debug)(OpaqueConst::from_ref(key), f)?;
+                                write!(f, ": ")?;
+                                (v_debug)(OpaqueConst::from_ref(val), f)?;
+                            }
+                            write!(f, "}}")
+                        });
                     }
+
+                    builder =
+                        builder.default_in_place(|target| unsafe { target.write(Self::default()) });
+
+                    builder = builder
+                        .clone_into(|src, dst| unsafe { dst.write(src.as_ref::<HashMap<K, V>>()) });
+
+                    if K::SHAPE.vtable.eq.is_some() && V::SHAPE.vtable.eq.is_some() {
+                        builder = builder.eq(|a, b| unsafe {
+                            let a = a.as_ref::<HashMap<K, V>>();
+                            let b = b.as_ref::<HashMap<K, V>>();
+                            let k_eq = K::SHAPE.vtable.eq.unwrap_unchecked();
+                            let v_eq = V::SHAPE.vtable.eq.unwrap_unchecked();
+                            a.len() == b.len()
+                                && a.iter().all(|(key_a, val_a)| {
+                                    b.get(key_a).is_some_and(|val_b| {
+                                        (k_eq)(
+                                            OpaqueConst::from_ref(key_a),
+                                            OpaqueConst::from_ref(key_a),
+                                        ) && (v_eq)(
+                                            OpaqueConst::from_ref(val_a),
+                                            OpaqueConst::from_ref(val_b),
+                                        )
+                                    })
+                                })
+                        });
+                    }
+
+                    if K::SHAPE.vtable.hash.is_some() && V::SHAPE.vtable.hash.is_some() {
+                        builder = builder.hash(|value, hasher_this, hasher_write_fn| unsafe {
+                            use crate::HasherProxy;
+                            let map = value.as_ref::<HashMap<K, V>>();
+                            let k_hash = K::SHAPE.vtable.hash.unwrap_unchecked();
+                            let v_hash = V::SHAPE.vtable.hash.unwrap_unchecked();
+                            let mut hasher = HasherProxy::new(hasher_this, hasher_write_fn);
+                            map.len().hash(&mut hasher);
+                            for (k, v) in map {
+                                (k_hash)(OpaqueConst::from_ref(k), hasher_this, hasher_write_fn);
+                                (v_hash)(OpaqueConst::from_ref(v), hasher_this, hasher_write_fn);
+                            }
+                        });
+                    }
+
+                    builder.build()
                 },
             )
             .def(Def::Map(MapDef {

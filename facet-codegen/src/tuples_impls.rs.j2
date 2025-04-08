@@ -79,32 +79,26 @@ where
 
         Shape::builder()
             .layout(Layout::new::<{{ type_name }}>())
-            .vtable(&const { ValueVTable {
-                type_name: type_name::<{{ type_list }}>,
-                display: None,
-                debug: const {
-                    if Characteristic::Eq.all({{ shape_slice }}) {
-                        Some(|value, f| {
-                            let value = unsafe { value.as_ref::<{{ type_name }}>() };
-                            write!(f, "(")?;
-                            {% for i in range(n) %}{% if i > 0 %}write!(f, ", ")?;
-                            {% endif %}unsafe {
-                                (T{{ i }}::SHAPE.vtable.debug.unwrap_unchecked())(
-                                    OpaqueConst::from_ref(&value.{{ i }}),
-                                    f,
-                                )
-                            }?;{% endfor %}
-                            write!(f, ")")
-                        })
-                    } else {
-                        None
-                    }
-                },
-                default_in_place: None,
-                clone_into: None,
-                marker_traits: MarkerTraits::empty(),
-                eq: if Characteristic::Eq.all({{ shape_slice }}) {
-                    Some(|a, b| {
+            .vtable(&const {
+                let mut builder = ValueVTable::builder()
+                    .type_name(type_name::<{{ type_list }}>)
+                    .marker_traits(MarkerTraits::empty());
+
+                if Characteristic::Eq.all({{ shape_slice }}) {
+                    builder = builder.debug(|value, f| {
+                        let value = unsafe { value.as_ref::<{{ type_name }}>() };
+                        write!(f, "(")?;
+                        {% for i in range(n) %}{% if i > 0 %}write!(f, ", ")?;
+                        {% endif %}unsafe {
+                            (T{{ i }}::SHAPE.vtable.debug.unwrap_unchecked())(
+                                OpaqueConst::from_ref(&value.{{ i }}),
+                                f,
+                            )
+                        }?;{% endfor %}
+                        write!(f, ")")
+                    });
+
+                    builder = builder.eq(|a, b| {
                         let a = unsafe { a.as_ref::<{{ type_name }}>() };
                         let b = unsafe { b.as_ref::<{{ type_name }}>() };
 
@@ -125,17 +119,11 @@ where
                                 OpaqueConst::from_ref(&b.{{ i }}),
                             )
                         }{% endif %}{% endfor %}
-                    })
-                } else {
-                    None
-                },
-                partial_ord: None,
-                ord: None,
-                hash: None,
-                drop_in_place: None,
-                parse: None,
-                try_from: None,
-            } })
+                    });
+                }
+
+                builder.build()
+            })
             .def(Def::Struct(StructDef {
                 kind: StructKind::Tuple,
                 fields: &const { [
