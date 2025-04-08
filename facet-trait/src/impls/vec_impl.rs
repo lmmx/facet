@@ -93,9 +93,11 @@ where
                     builder.build()
                 },
             )
-            .def(Def::List(ListDef {
-                vtable: &const {
-                    ListVTable::builder()
+            .def(Def::List(
+                ListDef::builder()
+                    .vtable(
+                        &const {
+                            ListVTable::builder()
                         .init_in_place_with_capacity(|data, capacity| unsafe {
                             Ok(data.write(Self::with_capacity(capacity)))
                         })
@@ -119,9 +121,11 @@ where
                             OpaqueConst::new_unchecked(vec.as_ptr().add(index))
                         })
                         .build()
-                },
-                t: T::SHAPE,
-            }))
+                        },
+                    )
+                    .t(T::SHAPE)
+                    .build(),
+            ))
             .build()
     };
 }

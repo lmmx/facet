@@ -34,12 +34,12 @@ pub fn write_type_name_list(
 
 macro_rules! field {
     ($idx:tt, $ty:ty,) => {
-        Field {
-            name: stringify!($idx),
-            shape: $crate::shape_of(&|t: $ty| t.$idx),
-            offset: std::mem::offset_of!($ty, $idx),
-            flags: FieldFlags::EMPTY,
-        }
+        Field::builder()
+            .name(stringify!($idx))
+            .shape($crate::shape_of(&|t: $ty| t.$idx))
+            .offset(std::mem::offset_of!($ty, $idx))
+            .flags(FieldFlags::EMPTY)
+            .build()
     };
 }
 
@@ -94,9 +94,11 @@ where
                     builder.build()
                 },
             )
-            .def(Def::Struct(StructDef {
-                kind: StructKind::Tuple,
-                fields: &const { [field!(0, (T0,),)] },
+            .def(Def::Struct({
+                let builder = StructDef::builder()
+                    .kind(StructKind::Tuple)
+                    .fields(&const { [field!(0, (T0,),)] });
+                unsafe { std::mem::transmute(builder) }
             }))
             .build()
     };
@@ -171,9 +173,11 @@ where
                     builder.build()
                 },
             )
-            .def(Def::Struct(StructDef {
-                kind: StructKind::Tuple,
-                fields: &const { [field!(0, (T0, T1,),), field!(1, (T0, T1,),)] },
+            .def(Def::Struct({
+                let builder = StructDef::builder()
+                    .kind(StructKind::Tuple)
+                    .fields(&const { [field!(0, (T0, T1,),), field!(1, (T0, T1,),)] });
+                unsafe { std::mem::transmute(builder) }
             }))
             .build()
     };
@@ -267,15 +271,17 @@ where
                     builder.build()
                 },
             )
-            .def(Def::Struct(StructDef {
-                kind: StructKind::Tuple,
-                fields: &const {
-                    [
-                        field!(0, (T0, T1, T2,),),
-                        field!(1, (T0, T1, T2,),),
-                        field!(2, (T0, T1, T2,),),
-                    ]
-                },
+            .def(Def::Struct({
+                let builder = StructDef::builder().kind(StructKind::Tuple).fields(
+                    &const {
+                        [
+                            field!(0, (T0, T1, T2,),),
+                            field!(1, (T0, T1, T2,),),
+                            field!(2, (T0, T1, T2,),),
+                        ]
+                    },
+                );
+                unsafe { std::mem::transmute(builder) }
             }))
             .build()
     };
@@ -395,16 +401,18 @@ where
                     builder.build()
                 },
             )
-            .def(Def::Struct(StructDef {
-                kind: StructKind::Tuple,
-                fields: &const {
-                    [
-                        field!(0, (T0, T1, T2, T3,),),
-                        field!(1, (T0, T1, T2, T3,),),
-                        field!(2, (T0, T1, T2, T3,),),
-                        field!(3, (T0, T1, T2, T3,),),
-                    ]
-                },
+            .def(Def::Struct({
+                let builder = StructDef::builder().kind(StructKind::Tuple).fields(
+                    &const {
+                        [
+                            field!(0, (T0, T1, T2, T3,),),
+                            field!(1, (T0, T1, T2, T3,),),
+                            field!(2, (T0, T1, T2, T3,),),
+                            field!(3, (T0, T1, T2, T3,),),
+                        ]
+                    },
+                );
+                unsafe { std::mem::transmute(builder) }
             }))
             .build()
     };
@@ -549,17 +557,19 @@ where
                     builder.build()
                 },
             )
-            .def(Def::Struct(StructDef {
-                kind: StructKind::Tuple,
-                fields: &const {
-                    [
-                        field!(0, (T0, T1, T2, T3, T4,),),
-                        field!(1, (T0, T1, T2, T3, T4,),),
-                        field!(2, (T0, T1, T2, T3, T4,),),
-                        field!(3, (T0, T1, T2, T3, T4,),),
-                        field!(4, (T0, T1, T2, T3, T4,),),
-                    ]
-                },
+            .def(Def::Struct({
+                let builder = StructDef::builder().kind(StructKind::Tuple).fields(
+                    &const {
+                        [
+                            field!(0, (T0, T1, T2, T3, T4,),),
+                            field!(1, (T0, T1, T2, T3, T4,),),
+                            field!(2, (T0, T1, T2, T3, T4,),),
+                            field!(3, (T0, T1, T2, T3, T4,),),
+                            field!(4, (T0, T1, T2, T3, T4,),),
+                        ]
+                    },
+                );
+                unsafe { std::mem::transmute(builder) }
             }))
             .build()
     };
@@ -741,18 +751,20 @@ where
                     builder.build()
                 },
             )
-            .def(Def::Struct(StructDef {
-                kind: StructKind::Tuple,
-                fields: &const {
-                    [
-                        field!(0, (T0, T1, T2, T3, T4, T5,),),
-                        field!(1, (T0, T1, T2, T3, T4, T5,),),
-                        field!(2, (T0, T1, T2, T3, T4, T5,),),
-                        field!(3, (T0, T1, T2, T3, T4, T5,),),
-                        field!(4, (T0, T1, T2, T3, T4, T5,),),
-                        field!(5, (T0, T1, T2, T3, T4, T5,),),
-                    ]
-                },
+            .def(Def::Struct({
+                let builder = StructDef::builder().kind(StructKind::Tuple).fields(
+                    &const {
+                        [
+                            field!(0, (T0, T1, T2, T3, T4, T5,),),
+                            field!(1, (T0, T1, T2, T3, T4, T5,),),
+                            field!(2, (T0, T1, T2, T3, T4, T5,),),
+                            field!(3, (T0, T1, T2, T3, T4, T5,),),
+                            field!(4, (T0, T1, T2, T3, T4, T5,),),
+                            field!(5, (T0, T1, T2, T3, T4, T5,),),
+                        ]
+                    },
+                );
+                unsafe { std::mem::transmute(builder) }
             }))
             .build()
     };
@@ -956,19 +968,21 @@ where
                     builder.build()
                 },
             )
-            .def(Def::Struct(StructDef {
-                kind: StructKind::Tuple,
-                fields: &const {
-                    [
-                        field!(0, (T0, T1, T2, T3, T4, T5, T6,),),
-                        field!(1, (T0, T1, T2, T3, T4, T5, T6,),),
-                        field!(2, (T0, T1, T2, T3, T4, T5, T6,),),
-                        field!(3, (T0, T1, T2, T3, T4, T5, T6,),),
-                        field!(4, (T0, T1, T2, T3, T4, T5, T6,),),
-                        field!(5, (T0, T1, T2, T3, T4, T5, T6,),),
-                        field!(6, (T0, T1, T2, T3, T4, T5, T6,),),
-                    ]
-                },
+            .def(Def::Struct({
+                let builder = StructDef::builder().kind(StructKind::Tuple).fields(
+                    &const {
+                        [
+                            field!(0, (T0, T1, T2, T3, T4, T5, T6,),),
+                            field!(1, (T0, T1, T2, T3, T4, T5, T6,),),
+                            field!(2, (T0, T1, T2, T3, T4, T5, T6,),),
+                            field!(3, (T0, T1, T2, T3, T4, T5, T6,),),
+                            field!(4, (T0, T1, T2, T3, T4, T5, T6,),),
+                            field!(5, (T0, T1, T2, T3, T4, T5, T6,),),
+                            field!(6, (T0, T1, T2, T3, T4, T5, T6,),),
+                        ]
+                    },
+                );
+                unsafe { std::mem::transmute(builder) }
             }))
             .build()
     };
@@ -1195,20 +1209,22 @@ where
                     builder.build()
                 },
             )
-            .def(Def::Struct(StructDef {
-                kind: StructKind::Tuple,
-                fields: &const {
-                    [
-                        field!(0, (T0, T1, T2, T3, T4, T5, T6, T7,),),
-                        field!(1, (T0, T1, T2, T3, T4, T5, T6, T7,),),
-                        field!(2, (T0, T1, T2, T3, T4, T5, T6, T7,),),
-                        field!(3, (T0, T1, T2, T3, T4, T5, T6, T7,),),
-                        field!(4, (T0, T1, T2, T3, T4, T5, T6, T7,),),
-                        field!(5, (T0, T1, T2, T3, T4, T5, T6, T7,),),
-                        field!(6, (T0, T1, T2, T3, T4, T5, T6, T7,),),
-                        field!(7, (T0, T1, T2, T3, T4, T5, T6, T7,),),
-                    ]
-                },
+            .def(Def::Struct({
+                let builder = StructDef::builder().kind(StructKind::Tuple).fields(
+                    &const {
+                        [
+                            field!(0, (T0, T1, T2, T3, T4, T5, T6, T7,),),
+                            field!(1, (T0, T1, T2, T3, T4, T5, T6, T7,),),
+                            field!(2, (T0, T1, T2, T3, T4, T5, T6, T7,),),
+                            field!(3, (T0, T1, T2, T3, T4, T5, T6, T7,),),
+                            field!(4, (T0, T1, T2, T3, T4, T5, T6, T7,),),
+                            field!(5, (T0, T1, T2, T3, T4, T5, T6, T7,),),
+                            field!(6, (T0, T1, T2, T3, T4, T5, T6, T7,),),
+                            field!(7, (T0, T1, T2, T3, T4, T5, T6, T7,),),
+                        ]
+                    },
+                );
+                unsafe { std::mem::transmute(builder) }
             }))
             .build()
     };
@@ -1457,21 +1473,23 @@ where
                     builder.build()
                 },
             )
-            .def(Def::Struct(StructDef {
-                kind: StructKind::Tuple,
-                fields: &const {
-                    [
-                        field!(0, (T0, T1, T2, T3, T4, T5, T6, T7, T8,),),
-                        field!(1, (T0, T1, T2, T3, T4, T5, T6, T7, T8,),),
-                        field!(2, (T0, T1, T2, T3, T4, T5, T6, T7, T8,),),
-                        field!(3, (T0, T1, T2, T3, T4, T5, T6, T7, T8,),),
-                        field!(4, (T0, T1, T2, T3, T4, T5, T6, T7, T8,),),
-                        field!(5, (T0, T1, T2, T3, T4, T5, T6, T7, T8,),),
-                        field!(6, (T0, T1, T2, T3, T4, T5, T6, T7, T8,),),
-                        field!(7, (T0, T1, T2, T3, T4, T5, T6, T7, T8,),),
-                        field!(8, (T0, T1, T2, T3, T4, T5, T6, T7, T8,),),
-                    ]
-                },
+            .def(Def::Struct({
+                let builder = StructDef::builder().kind(StructKind::Tuple).fields(
+                    &const {
+                        [
+                            field!(0, (T0, T1, T2, T3, T4, T5, T6, T7, T8,),),
+                            field!(1, (T0, T1, T2, T3, T4, T5, T6, T7, T8,),),
+                            field!(2, (T0, T1, T2, T3, T4, T5, T6, T7, T8,),),
+                            field!(3, (T0, T1, T2, T3, T4, T5, T6, T7, T8,),),
+                            field!(4, (T0, T1, T2, T3, T4, T5, T6, T7, T8,),),
+                            field!(5, (T0, T1, T2, T3, T4, T5, T6, T7, T8,),),
+                            field!(6, (T0, T1, T2, T3, T4, T5, T6, T7, T8,),),
+                            field!(7, (T0, T1, T2, T3, T4, T5, T6, T7, T8,),),
+                            field!(8, (T0, T1, T2, T3, T4, T5, T6, T7, T8,),),
+                        ]
+                    },
+                );
+                unsafe { std::mem::transmute(builder) }
             }))
             .build()
     };
@@ -1746,22 +1764,24 @@ where
                     builder.build()
                 },
             )
-            .def(Def::Struct(StructDef {
-                kind: StructKind::Tuple,
-                fields: &const {
-                    [
-                        field!(0, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9,),),
-                        field!(1, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9,),),
-                        field!(2, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9,),),
-                        field!(3, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9,),),
-                        field!(4, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9,),),
-                        field!(5, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9,),),
-                        field!(6, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9,),),
-                        field!(7, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9,),),
-                        field!(8, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9,),),
-                        field!(9, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9,),),
-                    ]
-                },
+            .def(Def::Struct({
+                let builder = StructDef::builder().kind(StructKind::Tuple).fields(
+                    &const {
+                        [
+                            field!(0, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9,),),
+                            field!(1, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9,),),
+                            field!(2, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9,),),
+                            field!(3, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9,),),
+                            field!(4, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9,),),
+                            field!(5, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9,),),
+                            field!(6, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9,),),
+                            field!(7, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9,),),
+                            field!(8, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9,),),
+                            field!(9, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9,),),
+                        ]
+                    },
+                );
+                unsafe { std::mem::transmute(builder) }
             }))
             .build()
     };
@@ -2060,23 +2080,25 @@ where
                     builder.build()
                 },
             )
-            .def(Def::Struct(StructDef {
-                kind: StructKind::Tuple,
-                fields: &const {
-                    [
-                        field!(0, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10,),),
-                        field!(1, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10,),),
-                        field!(2, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10,),),
-                        field!(3, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10,),),
-                        field!(4, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10,),),
-                        field!(5, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10,),),
-                        field!(6, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10,),),
-                        field!(7, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10,),),
-                        field!(8, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10,),),
-                        field!(9, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10,),),
-                        field!(10, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10,),),
-                    ]
-                },
+            .def(Def::Struct({
+                let builder = StructDef::builder().kind(StructKind::Tuple).fields(
+                    &const {
+                        [
+                            field!(0, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10,),),
+                            field!(1, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10,),),
+                            field!(2, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10,),),
+                            field!(3, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10,),),
+                            field!(4, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10,),),
+                            field!(5, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10,),),
+                            field!(6, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10,),),
+                            field!(7, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10,),),
+                            field!(8, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10,),),
+                            field!(9, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10,),),
+                            field!(10, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10,),),
+                        ]
+                    },
+                );
+                unsafe { std::mem::transmute(builder) }
             }))
             .build()
     };
@@ -2410,24 +2432,26 @@ where
                     builder.build()
                 },
             )
-            .def(Def::Struct(StructDef {
-                kind: StructKind::Tuple,
-                fields: &const {
-                    [
-                        field!(0, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11,),),
-                        field!(1, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11,),),
-                        field!(2, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11,),),
-                        field!(3, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11,),),
-                        field!(4, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11,),),
-                        field!(5, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11,),),
-                        field!(6, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11,),),
-                        field!(7, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11,),),
-                        field!(8, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11,),),
-                        field!(9, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11,),),
-                        field!(10, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11,),),
-                        field!(11, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11,),),
-                    ]
-                },
+            .def(Def::Struct({
+                let builder = StructDef::builder().kind(StructKind::Tuple).fields(
+                    &const {
+                        [
+                            field!(0, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11,),),
+                            field!(1, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11,),),
+                            field!(2, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11,),),
+                            field!(3, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11,),),
+                            field!(4, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11,),),
+                            field!(5, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11,),),
+                            field!(6, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11,),),
+                            field!(7, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11,),),
+                            field!(8, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11,),),
+                            field!(9, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11,),),
+                            field!(10, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11,),),
+                            field!(11, (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11,),),
+                        ]
+                    },
+                );
+                unsafe { std::mem::transmute(builder) }
             }))
             .build()
     };

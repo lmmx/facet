@@ -34,12 +34,12 @@ pub fn write_type_name_list(
 
 macro_rules! field {
     ($idx:tt, $ty:ty,) => {
-        Field {
-            name: stringify!($idx),
-            shape: $crate::shape_of(&|t: $ty| t.$idx),
-            offset: std::mem::offset_of!($ty, $idx),
-            flags: FieldFlags::EMPTY,
-        }
+        Field::builder()
+            .name(stringify!($idx))
+            .shape($crate::shape_of(&|t: $ty| t.$idx))
+            .offset(std::mem::offset_of!($ty, $idx))
+            .flags(FieldFlags::EMPTY)
+            .build()
     };
 }
 
@@ -124,12 +124,14 @@ where
 
                 builder.build()
             })
-            .def(Def::Struct(StructDef {
-                kind: StructKind::Tuple,
-                fields: &const { [
-                    {% for i in range(n) %}field!({{ i }}, {{ type_name }},){% if not loop.last %},
-                    {% endif %}{% endfor %}
-                ] },
+            .def(Def::Struct({
+                let builder = StructDef::builder()
+                    .kind(StructKind::Tuple)
+                    .fields(&const { [
+                        {% for i in range(n) %}field!({{ i }}, {{ type_name }},){% if not loop.last %},
+                        {% endif %}{% endfor %}
+                    ] });
+                unsafe { std::mem::transmute(builder) }
             }))
             .build()
     };

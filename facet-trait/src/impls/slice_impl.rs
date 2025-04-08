@@ -9,9 +9,11 @@ where
     const SHAPE: &'static Shape = &const {
         Shape::builder()
             .layout(Layout::new::<&[T]>())
-            .def(Def::List(ListDef {
-                vtable: &const {
-                    ListVTable::builder()
+            .def(Def::List(
+                ListDef::builder()
+                    .vtable(
+                        &const {
+                            ListVTable::builder()
                         .init_in_place_with_capacity(|_, _| Err(()))
                         .push(|_, _| {
                             panic!("Cannot push to &[T]");
@@ -31,9 +33,11 @@ where
                             OpaqueConst::new_unchecked(slice.as_ptr().add(index))
                         })
                         .build()
-                },
-                t: T::SHAPE,
-            }))
+                        },
+                    )
+                    .t(T::SHAPE)
+                    .build(),
+            ))
             .vtable(
                 &const {
                     let mut builder = ValueVTable::builder()

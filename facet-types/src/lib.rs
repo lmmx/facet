@@ -257,12 +257,57 @@ impl std::fmt::Display for FieldError {
 
 /// Common fields for struct-like types
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+#[non_exhaustive]
 pub struct StructDef {
     /// the kind of struct (e.g. struct, tuple struct, tuple)
     pub kind: StructKind,
 
     /// all fields, in declaration order (not necessarily in memory order)
     pub fields: &'static [Field],
+}
+
+impl StructDef {
+    /// Returns a builder for StructDef
+    pub const fn builder() -> StructDefBuilder {
+        StructDefBuilder::new()
+    }
+}
+
+/// Builder for StructDef
+pub struct StructDefBuilder {
+    kind: Option<StructKind>,
+    fields: Option<&'static [Field]>,
+}
+
+impl StructDefBuilder {
+    /// Creates a new StructDefBuilder
+    #[allow(clippy::new_without_default)]
+    pub const fn new() -> Self {
+        Self {
+            kind: None,
+            fields: None,
+        }
+    }
+
+    /// Sets the kind for the StructDef
+    pub const fn kind(mut self, kind: StructKind) -> Self {
+        self.kind = Some(kind);
+        self
+    }
+
+    /// Sets the fields for the StructDef
+    pub const fn fields(mut self, fields: &'static [Field]) -> Self {
+        self.fields = Some(fields);
+        self
+    }
+
+    /// Builds the StructDef
+    pub const fn build(self) -> StructDef {
+        StructDef {
+            kind: self.kind.unwrap(),
+            fields: self.fields.unwrap(),
+        }
+    }
 }
 
 /// Describes the kind of struct (useful for deserializing)
@@ -280,6 +325,7 @@ pub enum StructKind {
 
 /// Describes a field in a struct or tuple
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+#[non_exhaustive]
 pub struct Field {
     /// key for the struct field (for tuples and tuple-structs, this is the 0-based index)
     pub name: &'static str,
@@ -292,6 +338,71 @@ pub struct Field {
 
     /// flags for the field (e.g. sensitive, etc.)
     pub flags: FieldFlags,
+}
+
+impl Field {
+    /// Returns a builder for Field
+    pub const fn builder() -> FieldBuilder {
+        FieldBuilder::new()
+    }
+}
+
+/// Builder for Field
+pub struct FieldBuilder {
+    name: Option<&'static str>,
+    shape: Option<&'static Shape>,
+    offset: Option<usize>,
+    flags: Option<FieldFlags>,
+}
+
+impl FieldBuilder {
+    /// Creates a new FieldBuilder
+    #[allow(clippy::new_without_default)]
+    pub const fn new() -> Self {
+        Self {
+            name: None,
+            shape: None,
+            offset: None,
+            flags: None,
+        }
+    }
+
+    /// Sets the name for the Field
+    pub const fn name(mut self, name: &'static str) -> Self {
+        self.name = Some(name);
+        self
+    }
+
+    /// Sets the shape for the Field
+    pub const fn shape(mut self, shape: &'static Shape) -> Self {
+        self.shape = Some(shape);
+        self
+    }
+
+    /// Sets the offset for the Field
+    pub const fn offset(mut self, offset: usize) -> Self {
+        self.offset = Some(offset);
+        self
+    }
+
+    /// Sets the flags for the Field
+    pub const fn flags(mut self, flags: FieldFlags) -> Self {
+        self.flags = Some(flags);
+        self
+    }
+
+    /// Builds the Field
+    pub const fn build(self) -> Field {
+        Field {
+            name: self.name.unwrap(),
+            shape: self.shape.unwrap(),
+            offset: self.offset.unwrap(),
+            flags: match self.flags {
+                Some(flags) => flags,
+                None => FieldFlags::EMPTY,
+            },
+        }
+    }
 }
 
 bitflags::bitflags! {
@@ -345,6 +456,7 @@ impl std::fmt::Display for FieldFlags {
 
 /// Fields for map types
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+#[non_exhaustive]
 pub struct MapDef {
     /// vtable for interacting with the map
     pub vtable: &'static MapVTable,
@@ -354,8 +466,62 @@ pub struct MapDef {
     pub v: &'static Shape,
 }
 
+impl MapDef {
+    /// Returns a builder for MapDef
+    pub const fn builder() -> MapDefBuilder {
+        MapDefBuilder::new()
+    }
+}
+
+/// Builder for MapDef
+pub struct MapDefBuilder {
+    vtable: Option<&'static MapVTable>,
+    k: Option<&'static Shape>,
+    v: Option<&'static Shape>,
+}
+
+impl MapDefBuilder {
+    /// Creates a new MapDefBuilder
+    #[allow(clippy::new_without_default)]
+    pub const fn new() -> Self {
+        Self {
+            vtable: None,
+            k: None,
+            v: None,
+        }
+    }
+
+    /// Sets the vtable for the MapDef
+    pub const fn vtable(mut self, vtable: &'static MapVTable) -> Self {
+        self.vtable = Some(vtable);
+        self
+    }
+
+    /// Sets the key shape for the MapDef
+    pub const fn k(mut self, k: &'static Shape) -> Self {
+        self.k = Some(k);
+        self
+    }
+
+    /// Sets the value shape for the MapDef
+    pub const fn v(mut self, v: &'static Shape) -> Self {
+        self.v = Some(v);
+        self
+    }
+
+    /// Builds the MapDef
+    pub const fn build(self) -> MapDef {
+        MapDef {
+            vtable: self.vtable.unwrap(),
+            k: self.k.unwrap(),
+            v: self.v.unwrap(),
+        }
+    }
+}
+
 /// Fields for list types
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+#[non_exhaustive]
 pub struct ListDef {
     /// vtable for interacting with the list
     pub vtable: &'static ListVTable,
@@ -363,8 +529,53 @@ pub struct ListDef {
     pub t: &'static Shape,
 }
 
+impl ListDef {
+    /// Returns a builder for ListDef
+    pub const fn builder() -> ListDefBuilder {
+        ListDefBuilder::new()
+    }
+}
+
+/// Builder for ListDef
+pub struct ListDefBuilder {
+    vtable: Option<&'static ListVTable>,
+    t: Option<&'static Shape>,
+}
+
+impl ListDefBuilder {
+    /// Creates a new ListDefBuilder
+    #[allow(clippy::new_without_default)]
+    pub const fn new() -> Self {
+        Self {
+            vtable: None,
+            t: None,
+        }
+    }
+
+    /// Sets the vtable for the ListDef
+    pub const fn vtable(mut self, vtable: &'static ListVTable) -> Self {
+        self.vtable = Some(vtable);
+        self
+    }
+
+    /// Sets the item shape for the ListDef
+    pub const fn t(mut self, t: &'static Shape) -> Self {
+        self.t = Some(t);
+        self
+    }
+
+    /// Builds the ListDef
+    pub const fn build(self) -> ListDef {
+        ListDef {
+            vtable: self.vtable.unwrap(),
+            t: self.t.unwrap(),
+        }
+    }
+}
+
 /// Fields for enum types
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+#[non_exhaustive]
 pub struct EnumDef {
     /// representation of the enum (u8, u16, etc.)
     pub repr: EnumRepr,
@@ -372,8 +583,53 @@ pub struct EnumDef {
     pub variants: &'static [Variant],
 }
 
+impl EnumDef {
+    /// Returns a builder for EnumDef
+    pub const fn builder() -> EnumDefBuilder {
+        EnumDefBuilder::new()
+    }
+}
+
+/// Builder for EnumDef
+pub struct EnumDefBuilder {
+    repr: Option<EnumRepr>,
+    variants: Option<&'static [Variant]>,
+}
+
+impl EnumDefBuilder {
+    /// Creates a new EnumDefBuilder
+    #[allow(clippy::new_without_default)]
+    pub const fn new() -> Self {
+        Self {
+            repr: None,
+            variants: None,
+        }
+    }
+
+    /// Sets the representation for the EnumDef
+    pub const fn repr(mut self, repr: EnumRepr) -> Self {
+        self.repr = Some(repr);
+        self
+    }
+
+    /// Sets the variants for the EnumDef
+    pub const fn variants(mut self, variants: &'static [Variant]) -> Self {
+        self.variants = Some(variants);
+        self
+    }
+
+    /// Builds the EnumDef
+    pub const fn build(self) -> EnumDef {
+        EnumDef {
+            repr: self.repr.unwrap(),
+            variants: self.variants.unwrap(),
+        }
+    }
+}
+
 /// Describes a variant of an enum
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+#[non_exhaustive]
 pub struct Variant {
     /// Name of the variant
     pub name: &'static str,
@@ -383,6 +639,59 @@ pub struct Variant {
 
     /// Kind of variant (unit, tuple, or struct)
     pub kind: VariantKind,
+}
+
+impl Variant {
+    /// Returns a builder for Variant
+    pub const fn builder() -> VariantBuilder {
+        VariantBuilder::new()
+    }
+}
+
+/// Builder for Variant
+pub struct VariantBuilder {
+    name: Option<&'static str>,
+    discriminant: Option<Option<i64>>,
+    kind: Option<VariantKind>,
+}
+
+impl VariantBuilder {
+    /// Creates a new VariantBuilder
+    #[allow(clippy::new_without_default)]
+    pub const fn new() -> Self {
+        Self {
+            name: None,
+            discriminant: None,
+            kind: None,
+        }
+    }
+
+    /// Sets the name for the Variant
+    pub const fn name(mut self, name: &'static str) -> Self {
+        self.name = Some(name);
+        self
+    }
+
+    /// Sets the discriminant for the Variant
+    pub const fn discriminant(mut self, discriminant: Option<i64>) -> Self {
+        self.discriminant = Some(discriminant);
+        self
+    }
+
+    /// Sets the kind for the Variant
+    pub const fn kind(mut self, kind: VariantKind) -> Self {
+        self.kind = Some(kind);
+        self
+    }
+
+    /// Builds the Variant
+    pub const fn build(self) -> Variant {
+        Variant {
+            name: self.name.unwrap(),
+            discriminant: self.discriminant.unwrap(),
+            kind: self.kind.unwrap(),
+        }
+    }
 }
 
 /// Represents the different kinds of variants that can exist in a Rust enum
@@ -439,6 +748,7 @@ impl Default for EnumRepr {
 
 /// Definition for scalar types
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+#[non_exhaustive]
 pub struct ScalarDef {
     /// The TypeId of the scalar type
     pub type_id: ConstTypeId,
@@ -447,8 +757,35 @@ pub struct ScalarDef {
 impl ScalarDef {
     /// Create a new ScalarDef with the given TypeId
     pub const fn of<T>() -> Self {
-        Self {
-            type_id: ConstTypeId::of::<T>(),
+        ScalarDefBuilder::new()
+            .type_id(ConstTypeId::of::<T>())
+            .build()
+    }
+}
+
+/// Builder for ScalarDef
+#[derive(Default)]
+pub struct ScalarDefBuilder {
+    type_id: Option<ConstTypeId>,
+}
+
+impl ScalarDefBuilder {
+    /// Creates a new ScalarDefBuilder
+    #[allow(clippy::new_without_default)]
+    pub const fn new() -> Self {
+        Self { type_id: None }
+    }
+
+    /// Sets the type_id for the ScalarDef
+    pub const fn type_id(mut self, type_id: ConstTypeId) -> Self {
+        self.type_id = Some(type_id);
+        self
+    }
+
+    /// Builds the ScalarDef
+    pub const fn build(self) -> ScalarDef {
+        ScalarDef {
+            type_id: self.type_id.unwrap(),
         }
     }
 }

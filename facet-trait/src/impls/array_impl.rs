@@ -104,9 +104,11 @@ where
                     builder.build()
                 },
             )
-            .def(Def::List(ListDef {
-                vtable: &const {
-                    ListVTable::builder()
+            .def(Def::List(
+                ListDef::builder()
+                    .vtable(
+                        &const {
+                            ListVTable::builder()
                         .init_in_place_with_capacity(|_, _| Err(()))
                         .push(|_, _| {
                             panic!("Cannot push to [T; 1]");
@@ -121,9 +123,11 @@ where
                             OpaqueConst::new_unchecked(ptr.as_ptr::<[T; 1]>())
                         })
                         .build()
-                },
-                t: T::SHAPE,
-            }))
+                        },
+                    )
+                    .t(T::SHAPE)
+                    .build(),
+            ))
             .build()
     };
 }
