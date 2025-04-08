@@ -139,7 +139,7 @@ fn generate_readme_files(has_diffs: &mut bool, opts: &Options) {
         format!(r#"
 # {0}
 
-[![experimental](https://img.shields.io/badge/status-highly%20experimental-orange)](https://github.com/fasterthanlime/facet)
+[![experimental](https://img.shields.io/badge/status-experimental-yellow)](https://github.com/fasterthanlime/facet)
 [![free of syn](https://img.shields.io/badge/free%20of-syn-hotpink)](https://github.com/fasterthanlime/free-of-syn)
 [![crates.io](https://img.shields.io/crates/v/{0}.svg)](https://crates.io/crates/{0})
 [![documentation](https://docs.rs/{0}/badge.svg)](https://docs.rs/{0})

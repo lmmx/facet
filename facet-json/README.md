@@ -1,7 +1,7 @@
 
 # facet-json
 
-[![experimental](https://img.shields.io/badge/status-highly%20experimental-orange)](https://github.com/fasterthanlime/facet)
+[![experimental](https://img.shields.io/badge/status-experimental-yellow)](https://github.com/fasterthanlime/facet)
 [![free of syn](https://img.shields.io/badge/free%20of-syn-hotpink)](https://github.com/fasterthanlime/free-of-syn)
 [![crates.io](https://img.shields.io/crates/v/facet-json.svg)](https://crates.io/crates/facet-json)
 [![documentation](https://docs.rs/facet-json/badge.svg)](https://docs.rs/facet-json)
