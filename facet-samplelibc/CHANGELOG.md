@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.3](https://github.com/facet-rs/facet/compare/facet-samplelibc-v0.1.2...facet-samplelibc-v0.1.3) - 2025-04-09
+
+### Other
+
+- updated the following local packages: facet
+
 ## [0.1.2](https://github.com/facet-rs/facet/compare/facet-samplelibc-v0.1.1...facet-samplelibc-v0.1.2) - 2025-04-08
 
 ### Other

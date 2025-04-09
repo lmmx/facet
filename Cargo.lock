@@ -206,7 +206,7 @@ dependencies = [
 
 [[package]]
 name = "facet"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
  "facet-derive",
  "facet-spez",
@@ -223,7 +223,7 @@ dependencies = [
 
 [[package]]
 name = "facet-derive"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
  "facet-trait",
  "unsynn",
@@ -231,7 +231,7 @@ dependencies = [
 
 [[package]]
 name = "facet-json"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
  "facet-json-read",
  "facet-json-write",
@@ -239,7 +239,7 @@ dependencies = [
 
 [[package]]
 name = "facet-json-read"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
  "color-backtrace",
  "ctor",
@@ -252,7 +252,7 @@ dependencies = [
 
 [[package]]
 name = "facet-json-write"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
  "color-backtrace",
  "ctor",
@@ -266,7 +266,7 @@ dependencies = [
 
 [[package]]
 name = "facet-msgpack"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "color-backtrace",
  "ctor",
@@ -285,14 +285,14 @@ version = "0.1.3"
 
 [[package]]
 name = "facet-peek"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "facet-trait",
 ]
 
 [[package]]
 name = "facet-poke"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "color-backtrace",
  "ctor",
@@ -306,7 +306,7 @@ dependencies = [
 
 [[package]]
 name = "facet-pretty"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "facet-derive",
  "facet-peek",
@@ -315,7 +315,7 @@ dependencies = [
 
 [[package]]
 name = "facet-samplelibc"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "cc",
  "facet",
@@ -332,7 +332,7 @@ dependencies = [
 
 [[package]]
 name = "facet-trait"
-version = "0.1.3"
+version = "0.2.0"
 dependencies = [
  "facet-opaque",
  "facet-spez",
@@ -350,7 +350,7 @@ dependencies = [
 
 [[package]]
 name = "facet-urlencoded"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "facet-derive",
  "facet-poke",
@@ -361,7 +361,7 @@ dependencies = [
 
 [[package]]
 name = "facet-yaml"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "facet-derive",
  "facet-poke",

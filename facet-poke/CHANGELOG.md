@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1](https://github.com/facet-rs/facet/compare/facet-poke-v0.2.0...facet-poke-v0.2.1) - 2025-04-09
+
+### Other
+
+- updated the following local packages: facet-trait, facet-derive, facet-peek
+
 ## [0.2.0](https://github.com/facet-rs/facet/compare/facet-poke-v0.1.2...facet-poke-v0.2.0) - 2025-04-08
 
 ### Other
