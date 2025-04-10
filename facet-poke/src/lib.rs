@@ -48,9 +48,11 @@ pub struct Guard {
 
 impl Drop for Guard {
     fn drop(&mut self) {
-        unsafe {
-            std::alloc::dealloc(self.ptr, self.layout);
+        if self.layout.size() == 0 {
+            return;
         }
+        // SAFETY: `ptr` has been allocated via the global allocator with the given layout
+        unsafe { std::alloc::dealloc(self.ptr, self.layout) };
     }
 }
 

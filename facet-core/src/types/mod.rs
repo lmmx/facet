@@ -247,7 +247,12 @@ impl Shape {
     #[cfg(feature = "std")]
     #[inline]
     pub fn allocate(&self) -> crate::opaque::OpaqueUninit<'static> {
-        crate::opaque::OpaqueUninit::new(unsafe { std::alloc::alloc(self.layout) })
+        crate::opaque::OpaqueUninit::new(if self.layout.size() == 0 {
+            core::ptr::without_provenance_mut(self.layout.align())
+        } else {
+            // SAFETY: We have checked that layout's size is non-zero
+            unsafe { std::alloc::alloc(self.layout) }
+        })
     }
 }
 
