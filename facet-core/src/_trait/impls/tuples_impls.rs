@@ -1,5 +1,7 @@
 //! GENERATED: DO NOT EDIT — this file is generated from `tuples_impls.rs.j2`
 //! file in the `facet-codegen` crate.
+//!
+//! Edit the template and run `just codegen` to update.
 
 use core::{alloc::Layout, fmt};
 
