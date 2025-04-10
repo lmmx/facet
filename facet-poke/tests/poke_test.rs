@@ -487,6 +487,7 @@ fn test_array_traits() {
         [],
         [],
         FactBuilder::new()
+            .display()
             .debug()
             .equal_and(true)
             .ord_and(Ordering::Equal)
@@ -499,6 +500,7 @@ fn test_array_traits() {
         [42],
         [24],
         FactBuilder::new()
+            .display()
             .debug()
             .equal_and(false)
             .ord_and(Ordering::Greater)
@@ -512,6 +514,7 @@ fn test_array_traits() {
         [1, 3],
         FactBuilder::new()
             .debug()
+            .display()
             .equal_and(false)
             .ord_and(Ordering::Less)
             .default()
@@ -524,6 +527,7 @@ fn test_array_traits() {
         [0; 33],
         FactBuilder::new()
             .debug()
+            .display()
             .equal_and(true)
             .ord_and(Ordering::Equal)
             .clone()
@@ -535,6 +539,7 @@ fn test_array_traits() {
         ["hello"],
         ["world"],
         FactBuilder::new()
+            .display()
             .debug()
             .equal_and(false)
             .ord_and(Ordering::Less)

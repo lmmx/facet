@@ -26,18 +26,40 @@ where
                         .drop_in_place(|value| unsafe {
                             core::ptr::drop_in_place(value.as_mut::<[T; L]>());
                         });
+                    if T::SHAPE.vtable.display.is_some() {
+                        builder = builder.display(|value, f| {
+                            let value = unsafe { value.as_ref::<[T; L]>() };
+                            write!(f, "[")?;
+
+                            for (idx, value) in value.iter().enumerate() {
+                                unsafe {
+                                    (T::SHAPE.vtable.display.unwrap_unchecked())(
+                                        OpaqueConst::new(value),
+                                        f,
+                                    )?
+                                };
+                                if idx != L - 1 {
+                                    write!(f, ", ")?;
+                                }
+                            }
+                            write!(f, "]")
+                        });
+                    }
                     if T::SHAPE.vtable.debug.is_some() {
                         builder = builder.debug(|value, f| {
                             let value = unsafe { value.as_ref::<[T; L]>() };
                             write!(f, "[")?;
 
-                            for value in value {
+                            for (idx, value) in value.iter().enumerate() {
                                 unsafe {
                                     (T::SHAPE.vtable.debug.unwrap_unchecked())(
                                         OpaqueConst::new(value),
                                         f,
                                     )?
                                 };
+                                if idx != L - 1 {
+                                    write!(f, ", ")?;
+                                }
                             }
                             write!(f, "]")
                         });
