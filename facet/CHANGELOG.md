@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Feature
+
+- Implement `Facet` for `[T; L]` (instead of just `[T; 1]`)
+
 ## [0.1.11](https://github.com/facet-rs/facet/compare/facet-v0.1.10...facet-v0.1.11) - 2025-04-10
 
 ### Other

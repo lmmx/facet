@@ -482,6 +482,18 @@ fn test_slice_traits() {
 
 #[test]
 fn test_array_traits() {
+    // [i32; 0] implements Debug, PartialEq, Ord, Default, and Clone
+    test_peek_pair::<[i32; 0]>(
+        [],
+        [],
+        FactBuilder::new()
+            .debug()
+            .equal_and(true)
+            .ord_and(Ordering::Equal)
+            .default()
+            .clone()
+            .build(),
+    );
     // [i32; 1] implements Debug, PartialEq, Ord, Default, and Clone
     test_peek_pair(
         [42],
@@ -491,6 +503,29 @@ fn test_array_traits() {
             .equal_and(false)
             .ord_and(Ordering::Greater)
             .default()
+            .clone()
+            .build(),
+    );
+    // [i32; 2] implements Debug, PartialEq, Ord, Default, and Clone
+    test_peek_pair(
+        [1, 2],
+        [1, 3],
+        FactBuilder::new()
+            .debug()
+            .equal_and(false)
+            .ord_and(Ordering::Less)
+            .default()
+            .clone()
+            .build(),
+    );
+    // [i32; 33] implements Debug, PartialEq, Ord and Clone but not yet `Default`
+    test_peek_pair(
+        [0; 33],
+        [0; 33],
+        FactBuilder::new()
+            .debug()
+            .equal_and(true)
+            .ord_and(Ordering::Equal)
             .clone()
             .build(),
     );
