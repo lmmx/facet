@@ -12,7 +12,7 @@ jobs:
     runs-on: arc-runners
 
     container:
-      image: docker pull ghcr.io/facet-rs/facet-ci:latest
+      image: ghcr.io/facet-rs/facet-ci:latest
     steps:
       - uses: actions/checkout@v4
 
@@ -25,7 +25,7 @@ jobs:
     runs-on: arc-runners
 
     container:
-      image: docker pull ghcr.io/facet-rs/facet-ci:latest
+      image: ghcr.io/facet-rs/facet-ci:latest
     steps:
       - uses: actions/checkout@v4
 
