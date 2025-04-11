@@ -12,21 +12,9 @@ jobs:
     runs-on: arc-runners
 
     container:
-      image: rust:1.86.0-slim
+      image: docker pull ghcr.io/facet-rs/facet-ci:latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Setup cargo cache
-        uses: Swatinem/rust-cache@v2
-
-      - name: Verify Rust version
-        run: |
-          rustc --version
-
-      - name: Install just and cargo-nextest
-        uses: taiki-e/install-action@v2
-        with:
-          tool: just,cargo-nextest
 
       - name: Run tests
         shell: bash
@@ -37,21 +25,9 @@ jobs:
     runs-on: arc-runners
 
     container:
-      image: rustlang/rust:nightly-slim
+      image: docker pull ghcr.io/facet-rs/facet-ci:latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Setup cargo cache
-        uses: Swatinem/rust-cache@v2
-
-      - name: Verify Rust version
-        run: |
-          rustc --version
-
-      - name: Install just and cargo-nextest
-        uses: taiki-e/install-action@v2
-        with:
-          tool: just,cargo-nextest
 
       - name: Run miri
         shell: bash
