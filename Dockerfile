@@ -27,7 +27,7 @@ RUN rustup component add rust-src clippy rustfmt
 
 # Install cargo-binstall, then use it to install just and cargo-nextest
 RUN curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash \
-    && cargo binstall --yes just cargo-nextest
+    && cargo binstall -y just cargo-nextest
 
 # Set environment variables
 ENV CARGO_INCREMENTAL=0
@@ -39,3 +39,5 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 WORKDIR /app
 
 CMD ["bash"]
+
+LABEL org.opencontainers.image.source https://github.com/facet-rs/facet
