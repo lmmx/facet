@@ -122,3 +122,28 @@ docsrs *args:
     #!/usr/bin/env -S bash -eux
     source .envrc
     RUSTDOCFLAGS="--cfg docsrs" cargo +nightly doc {{args}}
+
+docker-build-push:
+    #!/usr/bin/env -S bash -euo pipefail
+    source .envrc
+    echo -e "\033[1;34m🐳 Building and pushing Docker image for CI...\033[0m"
+    
+    # Set variables
+    IMAGE_NAME="ghcr.io/bearcove/facet"
+    TAG="ci-$(date +%Y%m%d)-$(git rev-parse --short HEAD)"
+    
+    # Login to GitHub Container Registry using GitHub CLI (requires gh & jq)
+    command -v jq >/dev/null 2>&1 || { echo "jq is required but not installed. Please install it." >&2; exit 1; }
+    command -v gh >/dev/null 2>&1 || { echo "GitHub CLI (gh) is required but not installed. Please install it." >&2; exit 1; }
+    echo "$(gh auth token)" | docker login ghcr.io -u "$(gh api user | jq -r .login)" --password-stdin
+    
+    # Build Docker image (standard build for macOS compatibility)
+    docker build \
+      -t "${IMAGE_NAME}:${TAG}" \
+      -t "${IMAGE_NAME}:ci-latest" \
+      -f Dockerfile \
+      .
+      
+    # Push both tags
+    docker push "${IMAGE_NAME}:${TAG}"
+    docker push "${IMAGE_NAME}:ci-latest"
