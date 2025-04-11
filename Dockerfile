@@ -1,4 +1,4 @@
-FROM rust:1.86-slim-bullseye as builder
+FROM rust:1.86-slim-bullseye AS builder
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
@@ -25,8 +25,9 @@ RUN rustup component add miri rust-src --toolchain nightly-2025-04-05
 # Add rust-src, clippy, and rustfmt to stable toolchain
 RUN rustup component add rust-src clippy rustfmt
 
-# Install just and cargo-nextest
-RUN cargo install --locked just cargo-nextest
+# Install cargo-binstall, then use it to install just and cargo-nextest
+RUN curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash \
+    && cargo binstall --yes just cargo-nextest
 
 # Set environment variables
 ENV CARGO_INCREMENTAL=0
