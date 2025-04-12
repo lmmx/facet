@@ -1,4 +1,6 @@
-use super::PokeValueUninit;
+use facet_core::{EnumDef, EnumRepr, FieldError, Shape, Variant};
+
+use super::{PokeEnumUninit, PokeValueUninit};
 
 /// Represents an enum before a variant has been selected
 pub struct PokeEnumNoVariant<'mem> {
@@ -53,14 +55,14 @@ impl<'mem> PokeEnumNoVariant<'mem> {
     /// - The index is out of bounds.
     pub fn set_variant_by_index(
         self,
-        variant_index: usize,
+        variant_idx: usize,
     ) -> Result<PokeEnumUninit<'mem>, FieldError> {
-        if variant_index >= self.def.variants.len() {
+        if variant_idx >= self.def.variants.len() {
             return Err(FieldError::IndexOutOfBounds);
         }
 
         // Get the current variant info
-        let variant = &self.def.variants[variant_index];
+        let variant = &self.def.variants[variant_idx];
 
         // Prepare memory for the enum
         unsafe {
@@ -73,7 +75,7 @@ impl<'mem> PokeEnumNoVariant<'mem> {
                 // If we have an explicit discriminant, use it
                 Some(discriminant) => *discriminant,
                 // Otherwise, use the variant index directly
-                None => variant_index as i64,
+                None => variant_idx as i64,
             };
 
             // Write the discriminant value based on the representation
@@ -126,11 +128,10 @@ impl<'mem> PokeEnumNoVariant<'mem> {
 
         // Create PokeEnum with the selected variant
         Ok(PokeEnumUninit {
-            data: self.data,
-            iset: Default::default(),
-            shape: self.shape,
+            value: self.value,
             def: self.def,
-            selected_variant: variant_index,
+            iset: Default::default(),
+            variant_idx,
         })
     }
 
@@ -140,10 +141,5 @@ impl<'mem> PokeEnumNoVariant<'mem> {
             .variants
             .iter()
             .find(|variant| variant.name == name)
-    }
-
-    /// Whether the enum has a variant.
-    pub fn contains_variant_with_name(&self, name: &str) -> bool {
-        self.def.variants.iter().any(|variant| variant.name == name)
     }
 }

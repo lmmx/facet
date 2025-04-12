@@ -4,20 +4,16 @@ use super::{ISet, PokeValueUninit};
 
 /// Allows poking an enum with a selected variant (setting fields, etc.)
 pub struct PokeEnumUninit<'mem> {
-    /// The internal data storage for the enum
-    ///
-    /// Note that this stores both the discriminant and the variant data
-    /// (if any), and the layout depends on the enum representation.
-    /// Use [`Self::variant_data`] to get a pointer to the variant data.
+    /// underlying value
     pub(crate) value: PokeValueUninit<'mem>,
 
-    /// Enum definition
+    /// definition for this enum
     pub(crate) def: EnumDef,
 
-    /// Tracks which fields of the variant are initialized
+    /// tracks which fields of the variant are initialized
     pub(crate) iset: ISet,
 
-    /// Index of the selected variant
+    /// index of the selected variant
     pub(crate) variant_idx: usize,
 }
 
@@ -26,6 +22,12 @@ impl<'mem> PokeEnumUninit<'mem> {
     #[inline(always)]
     pub fn shape(&self) -> &'static Shape {
         self.shape
+    }
+
+    /// Enum definition getter
+    #[inline(always)]
+    pub fn def(&self) -> &EnumDef {
+        &self.def
     }
 
     /// Returns the currently selected variant index
