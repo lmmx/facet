@@ -49,6 +49,9 @@ impl<'mem> PokeEnumUninit<'mem> {
         &self,
         name: &str,
     ) -> Result<(usize, crate::PokeUninit<'mem>), FieldError> {
+        let (field_index, uninit) = self.storage.field_by_name(name)?;
+        uninit
+
         let variant = &self.def.variants[self.variant_idx];
 
         // Find the field in the variant

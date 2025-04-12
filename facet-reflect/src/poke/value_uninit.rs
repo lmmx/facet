@@ -1,7 +1,12 @@
-use crate::{ScalarType, peek::Peek};
-use facet_core::{Facet, OpaqueConst, OpaqueUninit, Shape, TryFromError, ValueVTable};
+use core::alloc::Layout;
 
-use super::PokeValue;
+use crate::{ScalarType, peek::Peek};
+use facet_core::{Def, Facet, OpaqueConst, OpaqueUninit, Shape, TryFromError, ValueVTable};
+
+use super::{
+    ISet, PokeEnumNoVariant, PokeEnumUninit, PokeListUninit, PokeMapUninit, PokeSmartPointerUninit,
+    PokeStructUninit, PokeValue,
+};
 
 /// Allows initializing/setting a value.
 ///
@@ -15,6 +20,26 @@ pub struct PokeValueUninit<'mem> {
 }
 
 impl<'mem> PokeValueUninit<'mem> {
+    /// Allocates a new poke of a type that implements facet
+    #[inline(always)]
+    pub fn alloc<S: Facet>() -> (Self, Guard) {
+        Self::alloc_shape(S::SHAPE)
+    }
+
+    /// Allocates a new poke from a given shape
+    #[inline(always)]
+    pub fn alloc_shape(shape: &'static Shape) -> (Self, Guard) {
+        let data = shape.allocate();
+        let layout = shape.layout;
+        let guard = Guard {
+            ptr: data.as_mut_bytes(),
+            layout,
+            shape,
+        };
+        let poke = Self { data, shape };
+        (poke, guard)
+    }
+
     /// Shape getter
     #[inline(always)]
     pub fn shape(&self) -> &'static Shape {
@@ -114,5 +139,75 @@ impl<'mem> PokeValueUninit<'mem> {
     /// `None` if the value isn't a scalar, or is a scalar not listed in [`ScalarType`]
     pub fn scalar_type(&self) -> Option<ScalarType> {
         ScalarType::try_from_shape(self.shape)
+    }
+
+    /// Tries to identify this value as a struct
+    pub fn into_struct(self) -> Result<PokeStructUninit<'mem>, Self> {
+        if let Def::Struct(def) = self.def() {
+            Ok(PokeStructUninit {
+                value: self,
+                iset: ISet::default(),
+                def,
+            })
+        } else {
+            Err(self)
+        }
+    }
+
+    /// Tries to identify this value as an enum
+    pub fn into_enum(self) -> Result<PokeEnumNoVariant<'mem>, Self> {
+        if let Def::Enum(def) = self.def() {
+            Ok(PokeEnumNoVariant { value: self, def })
+        } else {
+            Err(self)
+        }
+    }
+
+    /// Tries to identify this value as a map
+    pub fn into_map(self) -> Result<PokeMapUninit<'mem>, Self> {
+        if let Def::Map(def) = self.def() {
+            Ok(PokeMapUninit { value: self, def })
+        } else {
+            Err(self)
+        }
+    }
+
+    /// Tries to identify this value as a list
+    pub fn into_list(self) -> Result<PokeListUninit<'mem>, Self> {
+        if let Def::List(def) = self.def() {
+            Ok(PokeListUninit { value: self, def })
+        } else {
+            Err(self)
+        }
+    }
+
+    /// Tries to identify this value as a smart pointer
+    pub fn into_smart_pointer(self) -> Result<PokeSmartPointerUninit<'mem>, Self> {
+        if let Def::SmartPointer(def) = self.def() {
+            Ok(PokeSmartPointerUninit {
+                value: self,
+                iset: ISet::default(),
+                def,
+            })
+        } else {
+            Err(self)
+        }
+    }
+}
+
+/// Ensures a value is dropped when the guard is dropped.
+pub struct Guard {
+    pub(crate) ptr: OpaqueUninit<'static>,
+    pub(crate) layout: Layout,
+    pub(crate) shape: &'static Shape,
+}
+
+impl Drop for Guard {
+    fn drop(&mut self) {
+        if self.layout.size() == 0 {
+            return;
+        }
+        // SAFETY: `ptr` has been allocated via the global allocator with the given layout
+        unsafe { alloc::alloc::dealloc(self.ptr.as_mut_bytes(), self.layout) };
     }
 }

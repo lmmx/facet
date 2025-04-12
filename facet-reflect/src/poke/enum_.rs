@@ -1,13 +1,37 @@
-use core::ptr::NonNull;
 #[cfg(feature = "alloc")]
 extern crate alloc;
-#[cfg(feature = "alloc")]
-use alloc::boxed::Box;
 
-use facet_core::{
-    EnumDef, EnumRepr, Facet, FieldError, Opaque, OpaqueUninit, Shape, Variant, VariantKind,
-};
+use facet_core::{EnumDef, Shape, Variant};
 
-use crate::Guard;
+use super::PokeStruct;
 
-use super::{ISet, PokeValueUninit};
+/// Allows poking an enum with a selected variant (setting fields, etc.)
+pub struct PokeEnum<'mem> {
+    /// underlying value
+    pub(crate) storage: PokeStruct<'mem>,
+
+    /// definition for this enum
+    pub(crate) def: EnumDef,
+
+    /// index of the selected variant
+    pub(crate) variant_idx: usize,
+}
+
+impl<'mem> PokeEnum<'mem> {
+    /// Shape getter
+    #[inline(always)]
+    pub fn shape(&self) -> &'static Shape {
+        self.shape
+    }
+
+    /// Enum definition getter
+    #[inline(always)]
+    pub fn def(&self) -> &EnumDef {
+        &self.def
+    }
+
+    /// Returns the currently selected variant index
+    pub fn variant(&self) -> Variant {
+        self.def.variants[self.variant_idx]
+    }
+}

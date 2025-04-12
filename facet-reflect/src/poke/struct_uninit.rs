@@ -1,4 +1,4 @@
-use facet_core::{Facet, Shape, StructDef};
+use facet_core::{Facet, FieldError, Shape, StructDef};
 
 use crate::ReflectError;
 
@@ -48,7 +48,7 @@ impl<'mem> PokeStructUninit<'mem> {
     /// Asserts that every field has been initialized and gives a [`PokeStruct`]
     ///
     /// If one of the field was not initialized, all fields will be dropped in place.
-    pub fn build_in_place(self) -> Result<PokeStruct<'mem>, StructBuildError> {
+    pub fn build_in_place(self) -> Result<PokeStruct<'mem>, ReflectError> {
         self.assert_all_fields_initialized()?;
 
         let data = unsafe { self.value.data.assume_init() };
@@ -72,7 +72,7 @@ impl<'mem> PokeStructUninit<'mem> {
     /// This function will panic if:
     /// - Not all the fields have been initialized.
     /// - The generic type parameter T does not match the shape that this PokeStruct is building.
-    pub fn build<T: Facet>(self, guard: Option<Guard>) -> Result<T, StructBuildError> {
+    pub fn build<T: Facet>(self, guard: Option<Guard>) -> Result<T, ReflectError> {
         // change drop order: we want to drop guard _after_ this.
         let (mut guard, this) = (guard, self);
 
@@ -84,6 +84,7 @@ impl<'mem> PokeStructUninit<'mem> {
         let ps = this.build_in_place()?;
         let t = unsafe { ps.value.data.read::<T>() };
         ps.value.data();
+        Ok(t)
     }
 
     /// Build that PokeStruct into a boxed completed shape.
