@@ -90,6 +90,7 @@ impl<'mem> PokeSmartPointerUninit<'mem> {
     }
 }
 
+/// Allows mutating an initialized smart pointer
 pub struct PokeSmartPointer<'mem> {
     data: Opaque<'mem>,
     shape: &'static Shape,
@@ -211,6 +212,7 @@ impl<'mem> PokeSmartPointer<'mem> {
     }
 }
 
+/// Represents a write guard for a lock
 pub struct PokeSmartPointerWriteGuard<'mem> {
     #[allow(dead_code)]
     lr: LockResult<'mem>,
@@ -229,6 +231,7 @@ impl<'mem> PokeSmartPointerWriteGuard<'mem> {
     }
 }
 
+/// Represents a read guard for a lock
 pub struct PokeSmartPointerReadGuard<'mem> {
     #[allow(dead_code)]
     lr: LockResult<'mem>,

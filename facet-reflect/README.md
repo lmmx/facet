@@ -50,7 +50,7 @@ The `facet-reflect` crate allows reading from and writing to shapes implementing
 
 ## Usage
 
-This crate makes it trivial to write serializers and deserializers. It's used by crates like `facet-json`, `facet-yaml`, `facet-urlencoded`, etc.
+This crate makes it possible to write serializers and deserializers. It's used by crates like `facet-json`, `facet-yaml`, `facet-urlencoded`, etc.
 
 For more detailed usage examples, please refer to the crate documentation.
 

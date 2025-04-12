@@ -5,6 +5,9 @@
 #![doc = include_str!("../README.md")]
 
 #[cfg(feature = "alloc")]
+extern crate alloc;
+
+#[cfg(feature = "alloc")]
 mod poke;
 #[cfg(feature = "alloc")]
 pub use poke::*;
