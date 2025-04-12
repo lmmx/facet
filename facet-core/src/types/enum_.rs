@@ -65,7 +65,7 @@ pub struct Variant {
     pub name: &'static str,
 
     /// Discriminant value (if available). Might fit in a u8, etc.
-    pub discriminant: u64,
+    pub discriminant: i64,
 
     /// Fields for this variant (empty if unit, number-named if tuple).
     /// IMPORTANT: the offset for the fields already takes into account the size & alignment of the
@@ -86,7 +86,7 @@ impl Variant {
 /// Builder for Variant
 pub struct VariantBuilder {
     name: Option<&'static str>,
-    discriminant: Option<u64>,
+    discriminant: Option<i64>,
     fields: Option<Struct>,
     offset: Option<usize>,
     doc: &'static [&'static str],
@@ -112,7 +112,7 @@ impl VariantBuilder {
     }
 
     /// Sets the discriminant for the Variant
-    pub const fn discriminant(mut self, discriminant: u64) -> Self {
+    pub const fn discriminant(mut self, discriminant: i64) -> Self {
         self.discriminant = Some(discriminant);
         self
     }
