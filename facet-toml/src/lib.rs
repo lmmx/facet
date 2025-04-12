@@ -70,7 +70,7 @@ fn deserialize_as_struct<'mem>(
         let _v = deserialize_item(field_poke, v)
             .map_err(|e| format!("Error deserializing field '{}': {}", k, e))?;
         unsafe {
-            poke.mark_initialized(index);
+            poke.assume_field_init(index);
         }
     }
 

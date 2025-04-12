@@ -248,7 +248,7 @@ fn deserialize_scalar_field<'mem>(
                     ps_scalar.shape()
                 )));
             }
-            unsafe { ps.mark_initialized(index) };
+            unsafe { ps.assume_field_init(index) };
             Ok(())
         }
         _ => {

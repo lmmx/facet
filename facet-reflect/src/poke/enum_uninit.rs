@@ -1,6 +1,6 @@
 use facet_core::{EnumDef, FieldError, OpaqueUninit, Shape, Variant, VariantKind};
 
-use super::PokeStructUninit;
+use super::{PokeStructUninit, PokeValueUninit};
 
 /// Allows poking an enum with a selected variant (setting fields, etc.)
 pub struct PokeEnumUninit<'mem> {
@@ -48,7 +48,7 @@ impl<'mem> PokeEnumUninit<'mem> {
     pub fn field_by_name(
         &self,
         name: &str,
-    ) -> Result<(usize, crate::PokeUninit<'mem>), FieldError> {
+    ) -> Result<(usize, PokeValueUninit<'mem>), FieldError> {
         let (field_index, uninit) = self.storage.field_by_name(name)?;
         uninit
 

@@ -1,6 +1,6 @@
-use facet_core::{Field, Shape, StructDef};
+use facet_core::{Shape, StructDef};
 
-use super::PokeValue;
+use super::{ISet, PokeStructUninit, PokeValue};
 
 /// Allows mutating a fully-initialized struct
 pub struct PokeStruct<'mem> {
@@ -27,5 +27,17 @@ impl<'mem> PokeStruct<'mem> {
     #[inline(always)]
     pub fn into_value(self) -> PokeValue<'mem> {
         self.value
+    }
+
+    /// Coerce back into a partially-initialized struct
+    ///
+    /// This will allow mutating fields, and the invariants can then be re-checked
+    /// before going back to a fully-initialized struct
+    pub fn into_uninit(self) -> PokeStructUninit<'mem> {
+        PokeStructUninit {
+            value: self.value.into_uninit(),
+            def: self.def,
+            iset: ISet::all(self.def.fields),
+        }
     }
 }

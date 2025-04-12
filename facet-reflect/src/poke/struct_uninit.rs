@@ -105,10 +105,7 @@ impl<'mem> PokeStructUninit<'mem> {
     }
 
     /// Gets a field, by name
-    pub fn field_by_name(
-        &self,
-        name: &str,
-    ) -> Result<(usize, crate::PokeUninit<'mem>), FieldError> {
+    pub fn field_by_name(&self, name: &str) -> Result<(usize, PokeValueUninit<'mem>), FieldError> {
         let index = self
             .def
             .fields
@@ -218,7 +215,8 @@ impl<'mem> PokeStructUninit<'mem> {
     ///
     /// The caller must ensure that the field is initialized. Only call this after writing to
     /// an address gotten through [`Self::field`] or [`Self::field_by_name`].
-    pub unsafe fn mark_initialized(&mut self, index: usize) {
+    pub unsafe fn assume_field_init(&mut self, index: usize) {
+        // TODO: retire — use `Slot` system instead
         self.iset.set(index);
     }
 }

@@ -324,7 +324,7 @@ pub(crate) fn deserialize_value<'input, 'mem>(
                 };
 
                 unsafe {
-                    ps.mark_initialized(index);
+                    ps.assume_field_init(index);
                 }
 
                 let next_key = parser.parse_object_key()?;

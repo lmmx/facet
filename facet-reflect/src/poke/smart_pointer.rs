@@ -1,6 +1,5 @@
 use facet_core::{
-    Facet, LockResult, Opaque, OpaqueConst, OpaqueUninit, Shape, SmartPointerDef,
-    SmartPointerFlags, SmartPointerVTable,
+    Facet, LockResult, Opaque, Shape, SmartPointerDef, SmartPointerFlags, SmartPointerVTable,
 };
 
 use crate::PeekValue;
