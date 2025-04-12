@@ -7,6 +7,9 @@
 #[cfg(feature = "alloc")]
 extern crate alloc;
 
+mod error;
+pub use error::*;
+
 #[cfg(feature = "alloc")]
 mod poke;
 #[cfg(feature = "alloc")]

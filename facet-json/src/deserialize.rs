@@ -4,7 +4,8 @@ use crate::parser::{JsonParseErrorKind, JsonParseErrorWithContext, JsonParser};
 
 use facet_core::{Facet, Opaque, OpaqueUninit};
 use facet_reflect::{
-    PokeList, PokeMap, PokeOption, PokeStructUninit, PokeUninit, PokeValue, PokeValueUninit, ScalarType,
+    PokeList, PokeMap, PokeOption, PokeStructUninit, PokeUninit, PokeValue, PokeValueUninit,
+    ScalarType,
 };
 use log::trace;
 

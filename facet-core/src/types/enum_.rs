@@ -7,6 +7,7 @@ use super::Field;
 pub struct EnumDef {
     /// representation of the enum (u8, u16, etc.)
     pub repr: EnumRepr,
+
     /// all variants for this enum
     pub variants: &'static [Variant],
 }

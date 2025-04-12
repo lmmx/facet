@@ -83,4 +83,17 @@ impl<'mem> PokeValue<'mem> {
             shape: self.shape,
         })
     }
+
+    /// Deallocates the value's data, without dropping it
+    pub(crate) fn dealloc(self) {
+        unsafe { alloc::alloc::dealloc(self.data.as_mut(), self.shape.layout) };
+    }
+
+    /// Moves out the value's data as a T.
+    pub(crate) fn move_out<T: Facet>(self) -> T {
+        self.shape.assert_type::<T>();
+        let t = unsafe { self.data.read::<T>() };
+        self.dealloc();
+        t
+    }
 }

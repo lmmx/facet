@@ -2,31 +2,34 @@ extern crate alloc;
 
 use core::alloc::Layout;
 
-use facet_core::{Def, Facet, Opaque, OpaqueUninit, Shape};
+use facet_core::{Def, Facet, Field, Opaque, OpaqueUninit, Shape};
 
 mod value_uninit;
+pub use value_uninit::*;
+
+mod value;
 pub use value::*;
 
 mod struct_uninit;
 pub use struct_uninit::*;
 
+mod struct_;
+pub use struct_::*;
+
+mod enum_novariant;
+pub use enum_novariant::*;
+
 mod enum_uninit;
 pub use enum_uninit::*;
 
-mod value;
-pub use value::*;
+mod enum_;
+pub use enum_::*;
 
 mod list;
 pub use list::*;
 
 mod map;
 pub use map::*;
-
-mod struct_;
-pub use struct_::*;
-
-mod enum_;
-pub use enum_::*;
 
 mod option;
 pub use option::*;
@@ -224,6 +227,15 @@ impl<'mem> PokeUninit<'mem> {
 pub struct ISet(u64);
 
 impl ISet {
+    /// Creates a new ISet with all (given) fields set.
+    pub fn all(fields: &[Field]) -> Self {
+        let mut iset = ISet::default();
+        for (i, _field) in fields.iter().enumerate() {
+            iset.set(i);
+        }
+        iset
+    }
+
     /// Sets the bit at the given index.
     pub fn set(&mut self, index: usize) {
         if index >= 64 {
@@ -249,7 +261,7 @@ impl ISet {
     }
 
     /// Checks if all bits up to the given count are set.
-    pub fn all_set(&self, count: usize) -> bool {
+    pub fn are_all_set(&self, count: usize) -> bool {
         if count > 64 {
             panic!("ISet can only track up to 64 fields. Count {count} is out of bounds.");
         }
@@ -270,7 +282,7 @@ pub enum Poke<'mem> {
     /// A struct, tuple struct, or tuple. See [`PokeStruct`].
     Struct(PokeStructUninit<'mem>),
     /// An enum variant. See [`PokeEnum`].
-    Enum(PokeEnum<'mem>),
+    Enum(PokeEnumUninit<'mem>),
     /// An option value. See [`PokeOption`].
     Option(PokeOption<'mem>),
     /// A smart pointer. See [`PokeSmartPointer`].
@@ -376,7 +388,7 @@ impl<'mem> Poke<'mem> {
     }
 
     /// Converts this Poke into a PokeEnum, panicking if it's not an Enum variant
-    pub fn into_enum(self) -> PokeEnum<'mem> {
+    pub fn into_enum(self) -> PokeEnumUninit<'mem> {
         match self {
             Poke::Enum(e) => e,
             _ => panic!("expected Enum variant"),

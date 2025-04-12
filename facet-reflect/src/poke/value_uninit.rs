@@ -3,7 +3,9 @@ use facet_core::{Facet, OpaqueConst, OpaqueUninit, Shape, TryFromError, ValueVTa
 
 use super::PokeValue;
 
-/// Allows initializing/setting a value
+/// Allows initializing/setting a value.
+///
+/// A safe wrapper around [`OpaqueUninit`]
 pub struct PokeValueUninit<'mem> {
     /// pointer to the value (not initialized, or partially initialized)
     pub(crate) data: OpaqueUninit<'mem>,
