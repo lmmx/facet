@@ -12,7 +12,7 @@ use std::{
 
 use error::AnyErr;
 use facet_core::{Facet, Opaque, VariantKind};
-use facet_reflect::{PokeEnumNoVariant, PokeStruct, PokeUninit, PokeValue, PokeValueUninit};
+use facet_reflect::{PokeEnumNoVariant, PokeStructUninit, PokeUninit, PokeValue, PokeValueUninit};
 use toml_edit::{DocumentMut, Item, TomlError};
 
 /// Deserializes a TOML string into a value of type `T` that implements `Facet`.
@@ -39,7 +39,7 @@ fn deserialize_item<'mem>(poke: PokeUninit<'mem>, item: &Item) -> Result<Opaque<
 }
 
 fn deserialize_as_struct<'mem>(
-    mut poke: PokeStruct<'mem>,
+    mut poke: PokeStructUninit<'mem>,
     item: &Item,
 ) -> Result<Opaque<'mem>, AnyErr> {
     // Parse as a the inner struct type if item is a single value and the struct is a unit struct

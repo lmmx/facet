@@ -1,81 +1,65 @@
-use facet_core::{Facet, FieldError, Opaque, OpaqueConst, OpaqueUninit, Shape, StructDef};
+use facet_core::{Facet, Field, FieldError, OpaqueConst, Shape, StructDef};
 
 #[cfg(feature = "alloc")]
 extern crate alloc;
 #[cfg(feature = "alloc")]
 use alloc::boxed::Box;
 
-use super::{Guard, ISet, PokeValueUninit};
+use super::{Guard, ISet, PokeValue, PokeValueUninit};
 
-/// Allows poking a struct (setting fields, etc.)
-pub struct PokeStruct<'mem> {
-    data: OpaqueUninit<'mem>,
-    shape: &'static Shape,
-    def: StructDef,
-    iset: ISet,
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Uninitialized / partially-initialized struct
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/// Allows gradually initializing a struct (setting fields, etc.)
+pub struct PokeStructUninit<'mem> {
+    /// underlying value
+    pub(crate) value: PokeValueUninit<'mem>,
+
+    /// fields' shape, etc.
+    pub(crate) def: StructDef,
+
+    /// tracks initialized fields
+    pub(crate) iset: ISet,
 }
 
-impl<'mem> PokeStruct<'mem> {
-    #[inline(always)]
-    /// Coerce back into a `PokeValue`
-    pub fn into_value(self) -> PokeValueUninit<'mem> {
-        unsafe { PokeValueUninit::new(self.data, self.shape) }
-    }
-
+impl<'mem> PokeStructUninit<'mem> {
     /// Shape getter
     #[inline(always)]
     pub fn shape(&self) -> &'static Shape {
-        self.shape
-    }
-    /// Creates a new PokeStruct
-    ///
-    /// # Safety
-    ///
-    /// The `data`, `shape`, and `def` must match
-    pub(crate) unsafe fn new(
-        data: OpaqueUninit<'mem>,
-        shape: &'static Shape,
-        def: StructDef,
-    ) -> Self {
-        Self {
-            data,
-            iset: Default::default(),
-            shape,
-            def,
-        }
+        self.value.shape()
     }
 
-    /// Checks if all fields in the struct have been initialized.
-    /// Panics if any field is not initialized, providing details about the uninitialized field.
-    pub fn assert_all_fields_initialized(&self) {
-        for (i, field) in self.def.fields.iter().enumerate() {
+    /// Gets the struct definition
+    #[inline(always)]
+    pub fn def(&self) -> StructDef {
+        self.def
+    }
+
+    pub(crate) fn assert_all_fields_initialized(&self) -> Result<(), StructBuildError> {
+        for (i, field) in self.def.fields.iter().copied().enumerate() {
             if !self.iset.has(i) {
-                panic!(
-                    "Field '{}' was not initialized. Complete schema:\n{:?}",
-                    field.name, self.shape
-                );
+                return Err(StructBuildError::FieldNotInitialized { field });
             }
         }
+        Ok(())
     }
 
-    /// Asserts that every field has been initialized and forgets the PokeStruct.
+    /// Asserts that every field has been initialized and gives a [`PokeStruct`]
     ///
-    /// This method is only used when the origin is borrowed.
-    /// If this method is not called, all fields will be freed when the PokeStruct is dropped.
-    ///
-    /// # Panics
-    ///
-    /// This function will panic if any field is not initialized.
-    pub fn build_in_place(self) -> Opaque<'mem> {
-        // ensure all fields are initialized
-        self.assert_all_fields_initialized();
+    /// If one of the field was not initialized, all fields will be dropped in place.
+    pub fn build_in_place(self) -> Result<PokeStruct<'mem>, StructBuildError> {
+        self.assert_all_fields_initialized()?;
 
-        let data = unsafe { self.data.assume_init() };
+        let data = unsafe { self.value.data().assume_init() };
 
         // prevent field drops when the PokeStruct is dropped
         core::mem::forget(self);
 
-        data
+        Ok(PokeStruct {
+            def: self.def,
+            value: self.value.assume_init(),
+        })
     }
 
     /// Builds a value of type `T` from the PokeStruct, then deallocates the memory
@@ -92,13 +76,13 @@ impl<'mem> PokeStruct<'mem> {
         // this changes drop order: guard must be dropped _after_ this.
 
         this.assert_all_fields_initialized();
-        this.shape.assert_type::<T>();
+        this.shape().assert_type::<T>();
         if let Some(guard) = &guard {
             guard.shape.assert_type::<T>();
         }
 
         let result = unsafe {
-            let ptr = this.data.as_mut_bytes() as *const T;
+            let ptr = this.value.data.as_mut_bytes() as *const T;
             core::ptr::read(ptr)
         };
         guard.take(); // dealloc
@@ -116,9 +100,9 @@ impl<'mem> PokeStruct<'mem> {
     #[cfg(feature = "alloc")]
     pub fn build_boxed<T: Facet>(self) -> Box<T> {
         self.assert_all_fields_initialized();
-        self.shape.assert_type::<T>();
+        self.shape().assert_type::<T>();
 
-        let boxed = unsafe { Box::from_raw(self.data.as_mut_bytes() as *mut T) };
+        let boxed = unsafe { Box::from_raw(self.value.data.as_mut_bytes() as *mut T) };
         core::mem::forget(self);
         boxed
     }
@@ -152,30 +136,14 @@ impl<'mem> PokeStruct<'mem> {
         let field = &self.def.fields[index];
 
         // Get the field's address
-        let field_addr = unsafe { self.data.field_uninit(field.offset) };
+        let field_addr = unsafe { self.value.data.field_uninit(field.offset) };
         let field_shape = field.shape;
 
         let poke = unsafe { crate::PokeUninit::unchecked_new(field_addr, field_shape) };
         Ok(poke)
     }
 
-    /// Sets a field's value by its index, directly copying raw memory.
-    ///
-    /// # Safety
-    ///
-    /// This is unsafe because it directly copies memory without checking types.
-    /// The caller must ensure that `value` is of the correct type for the field.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if:
-    /// - The index is out of bounds
-    /// - The field shapes don't match
-    pub(crate) unsafe fn unchecked_set(
-        &mut self,
-        index: usize,
-        value: OpaqueConst,
-    ) -> Result<(), FieldError> {
+    unsafe fn unchecked_set(&mut self, index: usize, value: OpaqueConst) -> Result<(), FieldError> {
         if index >= self.def.fields.len() {
             return Err(FieldError::IndexOutOfBounds);
         }
@@ -185,7 +153,7 @@ impl<'mem> PokeStruct<'mem> {
         unsafe {
             core::ptr::copy_nonoverlapping(
                 value.as_ptr(),
-                self.data.field_uninit(field.offset).as_mut_bytes(),
+                self.value.data.field_uninit(field.offset).as_mut_bytes(),
                 field_shape.layout.size(),
             );
             self.iset.set(index);
@@ -256,14 +224,9 @@ impl<'mem> PokeStruct<'mem> {
     pub unsafe fn mark_initialized(&mut self, index: usize) {
         self.iset.set(index);
     }
-
-    /// Gets the struct definition
-    pub fn def(&self) -> StructDef {
-        self.def
-    }
 }
 
-impl Drop for PokeStruct<'_> {
+impl Drop for PokeStructUninit<'_> {
     fn drop(&mut self) {
         self.def
             .fields
@@ -280,4 +243,42 @@ impl Drop for PokeStruct<'_> {
                 drop_fn(self.data.field_init(field.offset));
             });
     }
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Fully-initialized struct
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/// Allows mutating a fully-initialized struct
+pub struct PokeStruct<'mem> {
+    /// pointer to the partially-initialized struct
+    value: PokeValue<'mem>,
+
+    /// field list, with offsets and shapes
+    def: StructDef,
+    // no need to track initialized fields — we're not
+    // uninitializing some fields
+}
+
+impl<'mem> PokeStruct {
+    /// Coerce back into a value
+    #[inline(always)]
+    pub fn into_value(self) -> PokeValue<'mem> {
+        self.value
+    }
+
+    /// Shape getter
+    #[inline(always)]
+    pub fn shape(&self) -> &'static Shape {
+        self.value.shape()
+    }
+
+    /// Gets the struct definition
+    pub fn def(&self) -> StructDef {
+        self.def
+    }
+}
+
+pub enum StructBuildError {
+    FieldNotInitialized { field: Field },
 }

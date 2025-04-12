@@ -4,6 +4,15 @@ use core::alloc::Layout;
 
 use facet_core::{Def, Facet, Opaque, OpaqueUninit, Shape};
 
+mod value_uninit;
+pub use value::*;
+
+mod struct_uninit;
+pub use struct_uninit::*;
+
+mod enum_uninit;
+pub use enum_uninit::*;
+
 mod value;
 pub use value::*;
 
@@ -35,7 +44,7 @@ pub enum PokeUninit<'mem> {
     /// A map (HashMap/BTreeMap/etc). See [`PokeMap`].
     Map(PokeMapUninit<'mem>),
     /// A struct, tuple struct, or tuple. See [`PokeStruct`].
-    Struct(PokeStruct<'mem>),
+    Struct(PokeStructUninit<'mem>),
     /// An enum variant. See [`PokeEnum`].
     Enum(PokeEnumNoVariant<'mem>),
     /// An option value. See [`PokeOption`].
@@ -97,7 +106,7 @@ impl<'mem> PokeUninit<'mem> {
     pub unsafe fn unchecked_new(data: OpaqueUninit<'mem>, shape: &'static Shape) -> Self {
         match shape.def {
             Def::Struct(struct_def) => {
-                PokeUninit::Struct(unsafe { PokeStruct::new(data, shape, struct_def) })
+                PokeUninit::Struct(unsafe { PokeStructUninit::new(data, shape, struct_def) })
             }
             Def::Map(map_def) => {
                 let pmu = unsafe { PokeMapUninit::new(data, shape, map_def) };
@@ -124,7 +133,7 @@ impl<'mem> PokeUninit<'mem> {
     }
 
     /// Converts this Poke into a PokeStruct, panicking if it's not a Struct variant
-    pub fn into_struct(self) -> PokeStruct<'mem> {
+    pub fn into_struct(self) -> PokeStructUninit<'mem> {
         match self {
             PokeUninit::Struct(s) => s,
             _ => panic!("expected Struct variant"),
@@ -259,7 +268,7 @@ pub enum Poke<'mem> {
     /// A map (HashMap/BTreeMap/etc). See [`PokeMap`].
     Map(PokeMap<'mem>),
     /// A struct, tuple struct, or tuple. See [`PokeStruct`].
-    Struct(PokeStruct<'mem>),
+    Struct(PokeStructUninit<'mem>),
     /// An enum variant. See [`PokeEnum`].
     Enum(PokeEnum<'mem>),
     /// An option value. See [`PokeOption`].
@@ -284,8 +293,11 @@ impl<'mem> Poke<'mem> {
     pub unsafe fn unchecked_new(data: Opaque<'mem>, shape: &'static Shape) -> Self {
         match shape.def {
             Def::Struct(struct_def) => Poke::Struct(unsafe {
-                let mut ps =
-                    PokeStruct::new(OpaqueUninit::new(data.as_mut_byte_ptr()), shape, struct_def);
+                let mut ps = PokeStructUninit::new(
+                    OpaqueUninit::new(data.as_mut_byte_ptr()),
+                    shape,
+                    struct_def,
+                );
                 for (i, _f) in ps.def().fields.iter().enumerate() {
                     ps.mark_initialized(i);
                 }
@@ -356,7 +368,7 @@ impl<'mem> Poke<'mem> {
     }
 
     /// Converts this Poke into a PokeStruct, panicking if it's not a Struct variant
-    pub fn into_struct(self) -> PokeStruct<'mem> {
+    pub fn into_struct(self) -> PokeStructUninit<'mem> {
         match self {
             Poke::Struct(s) => s,
             _ => panic!("expected Struct variant"),
