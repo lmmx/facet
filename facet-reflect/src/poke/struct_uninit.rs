@@ -1,6 +1,8 @@
 use facet_core::{Facet, Shape, StructDef};
 
-use super::{Guard, ISet, PokeStruct, PokeValue, PokeValueUninit, StructBuildError};
+use crate::ReflectError;
+
+use super::{Guard, ISet, PokeStruct, PokeValue, PokeValueUninit};
 
 #[cfg(feature = "alloc")]
 extern crate alloc;
@@ -8,6 +10,8 @@ extern crate alloc;
 use alloc::boxed::Box;
 
 /// Allows gradually initializing a struct (setting fields, etc.)
+///
+/// This also works for tuples, and tuple structs.
 pub struct PokeStructUninit<'mem> {
     /// underlying value
     pub(crate) value: PokeValueUninit<'mem>,
@@ -32,10 +36,10 @@ impl<'mem> PokeStructUninit<'mem> {
         self.def
     }
 
-    pub(crate) fn assert_all_fields_initialized(&self) -> Result<(), StructBuildError> {
+    pub(crate) fn assert_all_fields_initialized(&self) -> Result<(), ReflectError> {
         for (i, field) in self.def.fields.iter().copied().enumerate() {
             if !self.iset.has(i) {
-                return Err(StructBuildError::FieldNotInitialized { field });
+                return Err(ReflectError::PartiallyInitialized { field });
             }
         }
         Ok(())

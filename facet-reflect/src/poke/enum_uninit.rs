@@ -1,17 +1,14 @@
 use facet_core::{EnumDef, FieldError, OpaqueUninit, Shape, Variant, VariantKind};
 
-use super::{ISet, PokeValueUninit};
+use super::PokeStructUninit;
 
 /// Allows poking an enum with a selected variant (setting fields, etc.)
 pub struct PokeEnumUninit<'mem> {
     /// underlying value
-    pub(crate) value: PokeValueUninit<'mem>,
+    pub(crate) storage: PokeStructUninit<'mem>,
 
     /// definition for this enum
     pub(crate) def: EnumDef,
-
-    /// tracks which fields of the variant are initialized
-    pub(crate) iset: ISet,
 
     /// index of the selected variant
     pub(crate) variant_idx: usize,

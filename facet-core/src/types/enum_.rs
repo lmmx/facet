@@ -61,17 +61,20 @@ impl EnumDefBuilder {
 #[repr(C)]
 #[non_exhaustive]
 pub struct Variant {
-    /// Name of the variant
+    /// Name of the variant, e.g. `Foo` for `enum FooBar { Foo, Bar }`
     pub name: &'static str,
 
-    /// Discriminant value (if available)
-    pub discriminant: Option<i64>,
-
-    /// Kind of variant (unit, tuple, or struct)
+    /// Kind of variant (unit, tuple, or struct). This doesn't really change how fields are accessed,
+    /// but if it's "Unit" there are no fields, and if it's "Tuple" there are fields with numbered names.
     pub kind: VariantKind,
 
-    /// Offset of the variant in the enum layout
-    pub offset: usize,
+    /// Discriminant value (if available). Might fit in a u8, etc.
+    pub discriminant: u64,
+
+    /// Fields for this variant (empty if unit, number-named if tuple).
+    /// IMPORTANT: the offset for the fields already takes into account the size & alignment of the
+    /// discriminant.
+    pub fields: &'static [Field],
 
     /// Doc comment for the variant
     pub doc: &'static [&'static str],
@@ -87,7 +90,8 @@ impl Variant {
 /// Builder for Variant
 pub struct VariantBuilder {
     name: Option<&'static str>,
-    discriminant: Option<Option<i64>>,
+    discriminant: Option<u64>,
+    fields: Option<&'static [Field]>,
     kind: Option<VariantKind>,
     offset: Option<usize>,
     doc: &'static [&'static str],
@@ -101,6 +105,7 @@ impl VariantBuilder {
             name: None,
             discriminant: None,
             kind: None,
+            fields: None,
             offset: None,
             doc: &[],
         }
@@ -113,14 +118,14 @@ impl VariantBuilder {
     }
 
     /// Sets the discriminant for the Variant
-    pub const fn discriminant(mut self, discriminant: Option<i64>) -> Self {
+    pub const fn discriminant(mut self, discriminant: u64) -> Self {
         self.discriminant = Some(discriminant);
         self
     }
 
-    /// Sets the kind for the Variant
-    pub const fn kind(mut self, kind: VariantKind) -> Self {
-        self.kind = Some(kind);
+    /// Sets the fields for the Variant
+    pub const fn fields(mut self, fields: &'static [Field]) -> Self {
+        self.fields = Some(fields);
         self
     }
 
@@ -142,7 +147,7 @@ impl VariantBuilder {
             name: self.name.unwrap(),
             discriminant: self.discriminant.unwrap(),
             kind: self.kind.unwrap(),
-            offset: self.offset.unwrap(),
+            fields: self.fields.unwrap(),
             doc: self.doc,
         }
     }
@@ -157,16 +162,10 @@ pub enum VariantKind {
     Unit,
 
     /// Tuple variant with unnamed fields (e.g., `Some(T)` in Option)
-    Tuple {
-        /// List of fields contained in the tuple variant
-        fields: &'static [Field],
-    },
+    Tuple,
 
     /// Struct variant with named fields (e.g., `Struct { field: T }`)
-    Struct {
-        /// List of fields contained in the struct variant
-        fields: &'static [Field],
-    },
+    Struct,
 }
 
 /// All possible representations for Rust enums

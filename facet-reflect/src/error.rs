@@ -2,8 +2,8 @@ use facet_core::{EnumDef, Field, Shape};
 
 #[derive(Debug)]
 pub enum ReflectError {
-    /// Tried to `build` or `build_in_place` a struct without initializing all fields.
-    StructIncomplete { field: Field },
+    /// Tried to `build` or `build_in_place` a struct/enum without initializing all fields.
+    PartiallyInitialized { field: Field },
 
     /// Tried to set an enum to a variant that does not exist
     NoSuchVariant { enum_def: EnumDef },
@@ -16,10 +16,10 @@ pub enum ReflectError {
 impl core::fmt::Display for ReflectError {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
-            ReflectError::StructIncomplete { field } => {
+            ReflectError::PartiallyInitialized { field } => {
                 write!(
                     f,
-                    "Struct incomplete: field not initialized: {}",
+                    "Value partially initialized: field {} was not set",
                     field.name
                 )
             }
