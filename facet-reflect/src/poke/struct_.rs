@@ -1,4 +1,3 @@
-use core::ptr::NonNull;
 use facet_core::{Facet, FieldError, Opaque, OpaqueConst, OpaqueUninit, Shape, StructDef};
 
 #[cfg(feature = "alloc")]
@@ -33,7 +32,11 @@ impl<'mem> PokeStruct<'mem> {
     /// # Safety
     ///
     /// The `data`, `shape`, and `def` must match
-    pub unsafe fn new(data: OpaqueUninit<'mem>, shape: &'static Shape, def: StructDef) -> Self {
+    pub(crate) unsafe fn new(
+        data: OpaqueUninit<'mem>,
+        shape: &'static Shape,
+        def: StructDef,
+    ) -> Self {
         Self {
             data,
             iset: Default::default(),
@@ -120,30 +123,6 @@ impl<'mem> PokeStruct<'mem> {
         boxed
     }
 
-    /// Moves the contents of this `PokeStruct` into a target memory location.
-    ///
-    /// # Safety
-    ///
-    /// The target pointer must be valid and properly aligned,
-    /// and must be large enough to hold the value.
-    /// The caller is responsible for ensuring that the target memory is properly deallocated
-    /// when it's no longer needed.
-    pub unsafe fn move_into(self, target: NonNull<u8>, guard: Option<Guard>) {
-        self.assert_all_fields_initialized();
-        if let Some(guard) = &guard {
-            guard.shape.assert_shape(self.shape);
-        }
-
-        unsafe {
-            core::ptr::copy_nonoverlapping(
-                self.data.as_mut_bytes(),
-                target.as_ptr(),
-                self.shape.layout.size(),
-            );
-        }
-        core::mem::forget(self);
-    }
-
     /// Gets a field, by name
     pub fn field_by_name(
         &self,
@@ -192,7 +171,7 @@ impl<'mem> PokeStruct<'mem> {
     /// Returns an error if:
     /// - The index is out of bounds
     /// - The field shapes don't match
-    pub unsafe fn unchecked_set(
+    pub(crate) unsafe fn unchecked_set(
         &mut self,
         index: usize,
         value: OpaqueConst,
