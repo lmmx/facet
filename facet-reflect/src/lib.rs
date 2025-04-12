@@ -1,10 +1,8 @@
-//! The `facet-reflect` crate provides utilities for inspecting and manipulating data structures.
-//!
-//! This crate combines functionality that was previously split between separate crates:
-//! - Peeking: Reading or inspecting data structures
-//! - Poking: Modifying or manipulating data structures
-//!
-//! Both capabilities are essential for reflection operations in the Facet ecosystem.
+#![cfg_attr(not(feature = "std"), no_std)]
+#![warn(missing_docs)]
+#![warn(clippy::std_instead_of_core)]
+#![warn(clippy::std_instead_of_alloc)]
+#![doc = include_str!("../README.md")]
 
 #[cfg(feature = "alloc")]
 mod poke;
