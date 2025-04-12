@@ -123,12 +123,13 @@ impl<'mem> PokeValueUninit<'mem> {
     ///
     /// This function places a value of type T into the destination space,
     /// checking that T exactly matches the expected shape.
-    pub fn put<'src, T>(self, value: T) -> Opaque<'mem>
+    pub fn put<'src, T>(self, value: T) -> PokeValue<'mem>
     where
         T: Facet + 'src,
     {
         self.shape.assert_type::<T>();
-        unsafe { self.data.put(value) }
+        let data = unsafe { self.data.put(value) };
+        unsafe { PokeValue::new(data, self.shape) }
     }
 
     /// Attempts to set the value to its default
@@ -253,11 +254,7 @@ impl<'mem> PokeValue<'mem> {
     }
 
     /// Exposes the internal data buffer as a mutable reference
-    ///
-    /// # Safety
-    ///
-    /// The caller must ensure that they don't violate any invariants of the underlying type.
-    pub unsafe fn data(&mut self) -> Opaque<'mem> {
+    pub fn data(&mut self) -> Opaque<'mem> {
         self.data
     }
 
@@ -265,12 +262,13 @@ impl<'mem> PokeValue<'mem> {
     ///
     /// This function replaces the existing value with a new one of type T,
     /// checking that T exactly matches the expected shape.
-    pub fn replace<'src, T>(self, value: T) -> Opaque<'mem>
+    pub fn replace<'src, T>(self, value: T) -> PokeValue<'mem>
     where
         T: Facet + 'src,
     {
         self.shape.assert_type::<T>();
-        unsafe { self.data.replace(value) }
+        unsafe { self.data.replace(value) };
+        self
     }
 
     /// Format the value using its Debug implementation
@@ -294,5 +292,15 @@ impl<'mem> PokeValue<'mem> {
     /// Get the scalar type if set.
     pub fn scalar_type(&self) -> Option<ScalarType> {
         ScalarType::try_from_shape(self.shape)
+    }
+
+    /// Read the value from memory into a Rust value.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the shape doesn't match the type `T`.
+    pub fn get<T: Facet>(&self) -> &T {
+        self.shape.assert_type::<T>();
+        unsafe { self.data.as_ref::<T>() }
     }
 }

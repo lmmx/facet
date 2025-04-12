@@ -269,6 +269,12 @@ pub enum Poke<'mem> {
 }
 
 impl<'mem> Poke<'mem> {
+    /// Creates a new instance for safely interacting with a value.
+    pub fn new<T: Facet>(value: &'mem mut T) -> Self {
+        let opaque = Opaque::new(value);
+        unsafe { Self::unchecked_new(opaque, T::SHAPE) }
+    }
+
     /// Creates a new peek, for easy manipulation of some opaque data.
     ///
     /// # Safety

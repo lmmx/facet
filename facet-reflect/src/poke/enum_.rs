@@ -59,7 +59,7 @@ impl<'mem> PokeEnumNoVariant<'mem> {
             .enumerate()
             .find(|(_, v)| v.name == variant_name)
             .map(|(i, _)| i)
-            .ok_or(FieldError::NoSuchStaticField)?;
+            .ok_or(FieldError::NoSuchField)?;
 
         self.set_variant_by_index(variant_index)
     }
@@ -239,7 +239,7 @@ impl<'mem> PokeEnum<'mem> {
         match &variant.kind {
             VariantKind::Unit => {
                 // Unit variants have no fields
-                Err(FieldError::NoSuchStaticField)
+                Err(FieldError::NoSuchField)
             }
             VariantKind::Tuple { fields } => {
                 // For tuple variants, find the field by name
@@ -247,7 +247,7 @@ impl<'mem> PokeEnum<'mem> {
                     .iter()
                     .enumerate()
                     .find(|(_, f)| f.name == name)
-                    .ok_or(FieldError::NoSuchStaticField)?;
+                    .ok_or(FieldError::NoSuchField)?;
 
                 // Get the field's address
                 let field_data = unsafe { self.variant_data().field_uninit(field.offset) };
@@ -260,7 +260,7 @@ impl<'mem> PokeEnum<'mem> {
                     .iter()
                     .enumerate()
                     .find(|(_, f)| f.name == name)
-                    .ok_or(FieldError::NoSuchStaticField)?;
+                    .ok_or(FieldError::NoSuchField)?;
 
                 // Get the field's address
                 let field_data = unsafe { self.variant_data().field_uninit(field.offset) };
@@ -301,7 +301,7 @@ impl<'mem> PokeEnum<'mem> {
             }
             _ => {
                 // Not a tuple variant
-                Err(FieldError::NoSuchStaticField)
+                Err(FieldError::NoSuchField)
             }
         }
     }

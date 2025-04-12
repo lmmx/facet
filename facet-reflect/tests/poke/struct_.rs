@@ -1,141 +1,99 @@
-use facet::{Facet, OpaqueConst, OpaqueUninit};
-use facet_reflect::PokeUninit;
+use facet::Facet;
+use facet_reflect::{Poke, PokeUninit};
 
 use std::fmt::Debug;
 
 #[derive(Debug, PartialEq, Eq, Facet)]
-struct FooBar {
-    foo: u64,
-    bar: String,
+struct Person {
+    age: u64,
+    name: String,
 }
 
-impl Default for FooBar {
+impl Default for Person {
     fn default() -> Self {
-        FooBar {
-            foo: 69,
-            bar: String::new(),
+        Person {
+            age: 69,
+            name: String::new(),
         }
     }
 }
 
 #[test]
-fn build_foobar_through_reflection() {
+fn build_person_through_reflection() {
     facet_testhelpers::setup();
 
-    let (poke, guard) = PokeUninit::alloc::<FooBar>();
+    let (poke, guard) = PokeUninit::alloc::<Person>();
     let mut poke = poke.into_struct();
-    unsafe {
-        poke.unchecked_set_by_name("foo", OpaqueConst::new(&42u64))
-            .unwrap();
-    }
-
-    {
-        let bar = String::from("Hello, World!");
-        unsafe {
-            poke.unchecked_set_by_name("bar", OpaqueConst::new(&bar))
-                .unwrap();
-        }
-        // bar has been moved out of
-        core::mem::forget(bar);
-    }
-
-    let foo_bar = poke.build::<FooBar>(Some(guard));
-
-    // Verify the fields were set correctly
-    assert_eq!(foo_bar.foo, 42);
-    assert_eq!(foo_bar.bar, "Hello, World!");
+    poke.set_by_name("age", 42_u64).unwrap();
+    poke.set_by_name("name", String::from("Joan Watson"))
+        .unwrap();
+    let person = poke.build::<Person>(Some(guard));
 
     assert_eq!(
-        FooBar {
-            foo: 42,
-            bar: "Hello, World!".to_string()
+        Person {
+            age: 42,
+            name: "Joan Watson".to_string()
         },
-        foo_bar
+        person
     )
+}
+
+#[test]
+fn set_by_name_no_such_field() {
+    facet_testhelpers::setup();
+
+    let (poke, _guard) = PokeUninit::alloc::<Person>();
+    let mut poke = poke.into_struct();
+    assert_eq!(
+        poke.set_by_name("age", 42u16),
+        Err(facet_core::FieldError::NoSuchField)
+    );
 }
 
 #[test]
 fn set_by_name_type_mismatch() {
     facet_testhelpers::setup();
 
-    let (poke, _guard) = PokeUninit::alloc::<FooBar>();
+    let (poke, _guard) = PokeUninit::alloc::<Person>();
     let mut poke = poke.into_struct();
-    assert!(matches!(
-        poke.set_by_name("foo", 42u16),
-        Err(facet_core::FieldError::TypeMismatch)
-    ));
-}
-
-#[test]
-#[should_panic(expected = "Field 'bar' was not initialized")]
-fn build_foobar_incomplete() {
-    facet_testhelpers::setup();
-
-    let (poke, guard) = PokeUninit::alloc::<FooBar>();
-    let mut poke = poke.into_struct();
-    unsafe {
-        poke.unchecked_set_by_name("foo", OpaqueConst::new(&42u64))
-            .unwrap();
-    }
-
-    let foo_bar = poke.build::<FooBar>(Some(guard));
-
-    // Verify the fields were set correctly
-    assert_eq!(foo_bar.foo, 42);
-    assert_eq!(foo_bar.bar, "Hello, World!");
-
     assert_eq!(
-        FooBar {
-            foo: 42,
-            bar: "Hello, World!".to_string()
-        },
-        foo_bar
-    )
+        // note: age is a u64, not a u16
+        poke.set_by_name("age", 42u16),
+        Err(facet_core::FieldError::TypeMismatch {
+            expected: u64::SHAPE,
+            actual: u16::SHAPE,
+        })
+    );
 }
 
 #[test]
-fn build_foobar_after_default() {
+#[should_panic(expected = "Field 'name' was not initialized")]
+fn build_person_incomplete() {
     facet_testhelpers::setup();
 
-    let mut foo_bar: FooBar = Default::default();
+    let (poke, guard) = PokeUninit::alloc::<Person>();
+    let mut poke = poke.into_struct();
+    poke.set_by_name("age", 42u64).unwrap();
 
-    let mut poke = unsafe {
-        PokeUninit::unchecked_new(OpaqueUninit::new(&mut foo_bar as *mut _), FooBar::SHAPE)
-    }
-    .into_struct();
-    unsafe {
-        poke.mark_initialized(0);
-        poke.mark_initialized(1);
-    }
+    // we haven't set name, this'll panic
+    poke.build::<Person>(Some(guard));
+}
+
+#[test]
+fn mutate_person() {
+    facet_testhelpers::setup();
+
+    let mut person: Person = Default::default();
 
     {
-        let bar = String::from("Hello, World!");
-        unsafe {
-            poke.unchecked_set_by_name("bar", OpaqueConst::new(&bar))
-                .unwrap();
-        }
-        // bar has been moved out of
-        core::mem::forget(bar);
+        let mut poke = Poke::new(&mut person).into_struct();
+        // Use the safe set_by_name method
+        poke.set_by_name("name", String::from("Hello, World!"))
+            .unwrap();
+        poke.build_in_place();
     }
-    poke.build_in_place();
 
     // Verify the fields were set correctly
-    assert_eq!(foo_bar.foo, 69);
-    assert_eq!(foo_bar.bar, "Hello, World!");
-}
-
-#[test]
-fn build_u64_properly() {
-    facet_testhelpers::setup();
-
-    let shape = u64::SHAPE;
-    eprintln!("{:#?}", shape);
-
-    let (poke, _guard) = PokeUninit::alloc::<u64>();
-    let poke = poke.into_scalar();
-    let data = poke.put(42u64);
-    let value = unsafe { data.read::<u64>() };
-
-    // Verify the value was set correctly
-    assert_eq!(value, 42);
+    assert_eq!(person.age, 69);
+    assert_eq!(person.name, "Hello, World!");
 }

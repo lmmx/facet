@@ -12,7 +12,7 @@ use std::{
 
 use error::AnyErr;
 use facet_core::{Facet, Opaque, VariantKind};
-use facet_reflect::{PokeEnumNoVariant, PokeStruct, PokeUninit, PokeValueUninit};
+use facet_reflect::{PokeEnumNoVariant, PokeStruct, PokeUninit, PokeValue, PokeValueUninit};
 use toml_edit::{DocumentMut, Item, TomlError};
 
 /// Deserializes a TOML string into a value of type `T` that implements `Facet`.
@@ -29,7 +29,7 @@ fn from_str_opaque<'mem>(poke: PokeUninit<'mem>, toml: &str) -> Result<Opaque<'m
 
 fn deserialize_item<'mem>(poke: PokeUninit<'mem>, item: &Item) -> Result<Opaque<'mem>, AnyErr> {
     match poke {
-        PokeUninit::Scalar(poke) => deserialize_as_scalar(poke, item),
+        PokeUninit::Scalar(poke) => Ok(deserialize_as_scalar(poke, item)?.data()),
         PokeUninit::List(_) => todo!(),
         PokeUninit::Map(_) => todo!(),
         PokeUninit::Struct(poke) => deserialize_as_struct(poke, item),
@@ -107,7 +107,7 @@ fn deserialize_as_enum<'mem>(
 fn deserialize_as_scalar<'mem>(
     poke: PokeValueUninit<'mem>,
     item: &Item,
-) -> Result<Opaque<'mem>, AnyErr> {
+) -> Result<PokeValue<'mem>, AnyErr> {
     let shape = poke.shape();
 
     Ok(if shape.is_type::<String>() {

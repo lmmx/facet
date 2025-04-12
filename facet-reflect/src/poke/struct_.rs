@@ -154,7 +154,7 @@ impl<'mem> PokeStruct<'mem> {
             .fields
             .iter()
             .position(|f| f.name == name)
-            .ok_or(FieldError::NoSuchStaticField)?;
+            .ok_or(FieldError::NoSuchField)?;
         Ok((index, self.field(index)?))
     }
 
@@ -215,32 +215,6 @@ impl<'mem> PokeStruct<'mem> {
         Ok(())
     }
 
-    /// Sets a field's value by its name, directly copying raw memory.
-    ///
-    /// # Safety
-    ///
-    /// This is unsafe because it directly copies memory without checking types.
-    /// The caller must ensure that `value` is of the correct type for the field.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if:
-    /// - The field name doesn't exist
-    /// - The field shapes don't match
-    pub unsafe fn unchecked_set_by_name(
-        &mut self,
-        name: &str,
-        value: OpaqueConst,
-    ) -> Result<(), FieldError> {
-        let index = self
-            .def
-            .fields
-            .iter()
-            .position(|f| f.name == name)
-            .ok_or(FieldError::NoSuchStaticField)?;
-        unsafe { self.unchecked_set(index, value) }
-    }
-
     /// Sets a field's value by its index in a type-safe manner.
     ///
     /// This method takes ownership of the value and ensures proper memory management.
@@ -258,7 +232,10 @@ impl<'mem> PokeStruct<'mem> {
             .ok_or(FieldError::IndexOutOfBounds)?
             .shape;
         if !field_shape.is_type::<T>() {
-            return Err(FieldError::TypeMismatch);
+            return Err(FieldError::TypeMismatch {
+                expected: field_shape,
+                actual: T::SHAPE,
+            });
         }
 
         unsafe {
@@ -286,7 +263,7 @@ impl<'mem> PokeStruct<'mem> {
             .fields
             .iter()
             .position(|f| f.name == name)
-            .ok_or(FieldError::NoSuchStaticField)?;
+            .ok_or(FieldError::NoSuchField)?;
 
         self.set(index, value)
     }
