@@ -45,7 +45,7 @@ fn set_by_name_no_such_field() {
     let (poke, _guard) = PokeUninit::alloc::<Person>();
     let mut poke = poke.into_struct();
     assert_eq!(
-        poke.set_by_name("age", 42u16),
+        poke.set_by_name("philosophy", 42u16),
         Err(facet_core::FieldError::NoSuchField)
     );
 }
