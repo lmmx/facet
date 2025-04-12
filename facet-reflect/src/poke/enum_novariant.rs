@@ -1,6 +1,6 @@
 use facet_core::{EnumDef, EnumRepr, FieldError, Shape, Variant};
 
-use super::{PokeEnumUninit, PokeValueUninit};
+use super::{PokeEnumUninit, PokeStruct, PokeValueUninit};
 
 /// Represents an enum before a variant has been selected
 pub struct PokeEnumNoVariant<'mem> {
@@ -128,10 +128,13 @@ impl<'mem> PokeEnumNoVariant<'mem> {
 
         // Create PokeEnum with the selected variant
         Ok(PokeEnumUninit {
-            value: self.value,
             def: self.def,
-            iset: Default::default(),
             variant_idx,
+            storage: super::PokeStructUninit {
+                value,
+                def: (),
+                iset: (),
+            },
         })
     }
 

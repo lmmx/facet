@@ -69,7 +69,7 @@ impl<'mem> PokeEnumUninit<'mem> {
                     .ok_or(FieldError::NoSuchField)?;
 
                 // Get the field's address
-                let field_data = unsafe { self.variant_data().field_uninit(field.offset) };
+                let field_data = unsafe { self.variant_data().field_uninit_at(field.offset) };
                 let poke = unsafe { crate::PokeUninit::unchecked_new(field_data, field.shape) };
                 Ok((index, poke))
             }
@@ -82,7 +82,7 @@ impl<'mem> PokeEnumUninit<'mem> {
                     .ok_or(FieldError::NoSuchField)?;
 
                 // Get the field's address
-                let field_data = unsafe { self.variant_data().field_uninit(field.offset) };
+                let field_data = unsafe { self.variant_data().field_uninit_at(field.offset) };
                 let poke = unsafe { crate::PokeUninit::unchecked_new(field_data, field.shape) };
                 Ok((index, poke))
             }
@@ -114,7 +114,7 @@ impl<'mem> PokeEnumUninit<'mem> {
                 let field = &fields[index];
 
                 // Get the field's address
-                let field_data = unsafe { self.variant_data().field_uninit(field.offset) };
+                let field_data = unsafe { self.variant_data().field_uninit_at(field.offset) };
                 let poke = unsafe { crate::PokeUninit::unchecked_new(field_data, field.shape) };
                 Ok(poke)
             }

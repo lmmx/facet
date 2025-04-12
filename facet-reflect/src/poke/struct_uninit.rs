@@ -1,4 +1,4 @@
-use facet_core::{Facet, FieldError, Shape, StructDef};
+use facet_core::{Facet, FieldError, Fields, Shape};
 
 use crate::ReflectError;
 
@@ -17,7 +17,7 @@ pub struct PokeStructUninit<'mem> {
     pub(crate) value: PokeValueUninit<'mem>,
 
     /// fields' shape, etc.
-    pub(crate) def: StructDef,
+    pub(crate) def: Struct,
 
     /// tracks initialized fields
     pub(crate) iset: ISet,
@@ -32,7 +32,7 @@ impl<'mem> PokeStructUninit<'mem> {
 
     /// Gets the struct definition
     #[inline(always)]
-    pub fn def(&self) -> StructDef {
+    pub fn def(&self) -> Struct {
         self.def
     }
 
@@ -105,7 +105,10 @@ impl<'mem> PokeStructUninit<'mem> {
     }
 
     /// Gets a field, by name
-    pub fn field_by_name(&self, name: &str) -> Result<(usize, PokeValueUninit<'mem>), FieldError> {
+    pub(crate) unsafe fn field_uninit_by_name(
+        &self,
+        name: &str,
+    ) -> Result<(usize, PokeValueUninit<'mem>), FieldError> {
         let index = self
             .def
             .fields
@@ -122,102 +125,19 @@ impl<'mem> PokeStructUninit<'mem> {
     /// Returns an error if:
     /// - The shape doesn't represent a struct.
     /// - The index is out of bounds.
-    pub fn field(&self, index: usize) -> Result<crate::PokeUninit<'mem>, FieldError> {
-        if index >= self.def.fields.len() {
-            return Err(FieldError::IndexOutOfBounds);
-        }
-
-        let field = &self.def.fields[index];
-
-        // Get the field's address
-        let field_addr = unsafe { self.value.data.field_uninit(field.offset) };
-        let field_shape = field.shape;
-
-        let poke = unsafe { crate::PokeUninit::unchecked_new(field_addr, field_shape) };
-        Ok(poke)
-    }
-
-    unsafe fn unchecked_set(&mut self, index: usize, value: OpaqueConst) -> Result<(), FieldError> {
+    pub(crate) unsafe fn field_uninit(
+        &self,
+        index: usize,
+    ) -> Result<PokeValueUninit<'mem>, FieldError> {
         if index >= self.def.fields.len() {
             return Err(FieldError::IndexOutOfBounds);
         }
         let field = &self.def.fields[index];
-        let field_shape = field.shape;
 
-        unsafe {
-            core::ptr::copy_nonoverlapping(
-                value.as_ptr(),
-                self.value.data.field_uninit(field.offset).as_mut_bytes(),
-                field_shape.layout.size(),
-            );
-            self.iset.set(index);
-        }
-
-        Ok(())
-    }
-
-    /// Sets a field's value by its index in a type-safe manner.
-    ///
-    /// This method takes ownership of the value and ensures proper memory management.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if:
-    /// - The index is out of bounds
-    /// - The field shapes don't match
-    pub fn set<T: Facet>(&mut self, index: usize, value: T) -> Result<(), FieldError> {
-        let field_shape = self
-            .def
-            .fields
-            .get(index)
-            .ok_or(FieldError::IndexOutOfBounds)?
-            .shape;
-        if !field_shape.is_type::<T>() {
-            return Err(FieldError::TypeMismatch {
-                expected: field_shape,
-                actual: T::SHAPE,
-            });
-        }
-
-        unsafe {
-            let opaque = OpaqueConst::new(&value);
-            let result = self.unchecked_set(index, opaque);
-            if result.is_ok() {
-                core::mem::forget(value);
-            }
-            result
-        }
-    }
-
-    /// Sets a field's value by its name in a type-safe manner.
-    ///
-    /// This method takes ownership of the value and ensures proper memory management.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if:
-    /// - The field name doesn't exist
-    /// - The field shapes don't match
-    pub fn set_by_name<T: Facet>(&mut self, name: &str, value: T) -> Result<(), FieldError> {
-        let index = self
-            .def
-            .fields
-            .iter()
-            .position(|f| f.name == name)
-            .ok_or(FieldError::NoSuchField)?;
-
-        self.set(index, value)
-    }
-
-    /// Marks a field as initialized.
-    ///
-    /// # Safety
-    ///
-    /// The caller must ensure that the field is initialized. Only call this after writing to
-    /// an address gotten through [`Self::field`] or [`Self::field_by_name`].
-    pub unsafe fn assume_field_init(&mut self, index: usize) {
-        // TODO: retire — use `Slot` system instead
-        self.iset.set(index);
+        Ok(PokeValueUninit {
+            data: unsafe { self.value.data.field_uninit_at(field.offset) },
+            shape: field.shape,
+        })
     }
 }
 

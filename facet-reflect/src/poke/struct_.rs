@@ -1,4 +1,4 @@
-use facet_core::{Shape, StructDef};
+use facet_core::{Fields, Shape};
 
 use super::{ISet, PokeStructUninit, PokeValue};
 
@@ -8,7 +8,7 @@ pub struct PokeStruct<'mem> {
     pub(crate) value: PokeValue<'mem>,
 
     /// field list, with offsets and shapes
-    pub(crate) def: StructDef,
+    pub(crate) def: Struct,
 }
 
 impl<'mem> PokeStruct<'mem> {
@@ -19,7 +19,7 @@ impl<'mem> PokeStruct<'mem> {
     }
 
     /// Gets the struct definition
-    pub fn def(&self) -> StructDef {
+    pub fn def(&self) -> Struct {
         self.def
     }
 

@@ -1,3 +1,7 @@
+use facet_core::{MapDef, OpaqueUninit, Shape};
+
+use super::{PokeMap, PokeValueUninit};
+
 /// Allows initializing an uninitialized map
 pub struct PokeMapUninit<'mem> {
     pub(crate) value: PokeValueUninit<'mem>,
@@ -6,23 +10,9 @@ pub struct PokeMapUninit<'mem> {
 
 impl<'mem> PokeMapUninit<'mem> {
     #[inline(always)]
-    /// Coerce back into a `PokeValue`
-    pub fn into_value(self) -> PokeValueUninit<'mem> {
-        unsafe { PokeValueUninit::new(self.data, self.shape) }
-    }
-
-    #[inline(always)]
     /// Shape getter
     pub fn shape(&self) -> &'static Shape {
         self.shape
-    }
-    /// Creates a new uninitialized map write-proxy
-    ///
-    /// # Safety
-    ///
-    /// The data buffer must match the size and alignment of the shape.
-    pub(crate) unsafe fn new(data: OpaqueUninit<'mem>, shape: &'static Shape, def: MapDef) -> Self {
-        Self { data, shape, def }
     }
 
     /// Initializes the map with an optional size hint

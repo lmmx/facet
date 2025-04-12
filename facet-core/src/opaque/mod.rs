@@ -82,7 +82,7 @@ impl<'mem> OpaqueUninit<'mem> {
     /// # Safety
     ///
     /// Offset is within the bounds of the allocated memory
-    pub unsafe fn field_uninit(self, offset: usize) -> OpaqueUninit<'mem> {
+    pub unsafe fn field_uninit_at(self, offset: usize) -> OpaqueUninit<'mem> {
         OpaqueUninit(unsafe { self.0.byte_add(offset) }, PhantomData)
     }
 

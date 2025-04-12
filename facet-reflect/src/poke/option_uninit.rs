@@ -1,3 +1,7 @@
+use facet_core::{OpaqueUninit, OptionDef, OptionVTable, Shape};
+
+use super::PokeOption;
+
 /// Allows initializing an uninitialized option
 pub struct PokeOptionUninit<'mem> {
     data: OpaqueUninit<'mem>,
@@ -6,19 +10,6 @@ pub struct PokeOptionUninit<'mem> {
 }
 
 impl<'mem> PokeOptionUninit<'mem> {
-    /// Creates a new uninitialized option poke
-    ///
-    /// # Safety
-    ///
-    /// `data` must be properly aligned and sized for this shape.
-    pub(crate) unsafe fn new(
-        data: OpaqueUninit<'mem>,
-        shape: &'static Shape,
-        def: OptionDef,
-    ) -> Self {
-        Self { data, shape, def }
-    }
-
     /// Returns the shape of this option
     pub fn shape(&self) -> &'static Shape {
         self.shape
@@ -32,12 +23,6 @@ impl<'mem> PokeOptionUninit<'mem> {
     /// Returns the option vtable
     pub fn vtable(&self) -> &'static OptionVTable {
         self.def.vtable
-    }
-
-    /// Get a reference to the underlying PokeValue
-    #[inline(always)]
-    pub fn into_value(self) -> crate::PokeValueUninit<'mem> {
-        unsafe { crate::PokeValueUninit::new(self.data, self.shape) }
     }
 
     /// Initialize the option as None

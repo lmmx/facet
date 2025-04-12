@@ -1,4 +1,4 @@
-use super::Field;
+use super::Struct;
 
 /// Fields for enum types
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
@@ -64,17 +64,13 @@ pub struct Variant {
     /// Name of the variant, e.g. `Foo` for `enum FooBar { Foo, Bar }`
     pub name: &'static str,
 
-    /// Kind of variant (unit, tuple, or struct). This doesn't really change how fields are accessed,
-    /// but if it's "Unit" there are no fields, and if it's "Tuple" there are fields with numbered names.
-    pub kind: VariantKind,
-
     /// Discriminant value (if available). Might fit in a u8, etc.
     pub discriminant: u64,
 
     /// Fields for this variant (empty if unit, number-named if tuple).
     /// IMPORTANT: the offset for the fields already takes into account the size & alignment of the
     /// discriminant.
-    pub fields: &'static [Field],
+    pub fields: Struct,
 
     /// Doc comment for the variant
     pub doc: &'static [&'static str],
@@ -91,8 +87,7 @@ impl Variant {
 pub struct VariantBuilder {
     name: Option<&'static str>,
     discriminant: Option<u64>,
-    fields: Option<&'static [Field]>,
-    kind: Option<VariantKind>,
+    fields: Option<Struct>,
     offset: Option<usize>,
     doc: &'static [&'static str],
 }
@@ -104,7 +99,6 @@ impl VariantBuilder {
         Self {
             name: None,
             discriminant: None,
-            kind: None,
             fields: None,
             offset: None,
             doc: &[],
@@ -124,7 +118,7 @@ impl VariantBuilder {
     }
 
     /// Sets the fields for the Variant
-    pub const fn fields(mut self, fields: &'static [Field]) -> Self {
+    pub const fn fields(mut self, fields: Struct) -> Self {
         self.fields = Some(fields);
         self
     }
@@ -146,29 +140,13 @@ impl VariantBuilder {
         Variant {
             name: self.name.unwrap(),
             discriminant: self.discriminant.unwrap(),
-            kind: self.kind.unwrap(),
             fields: self.fields.unwrap(),
             doc: self.doc,
         }
     }
 }
 
-/// Represents the different kinds of variants that can exist in a Rust enum
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
-#[repr(C)]
-#[non_exhaustive]
-pub enum VariantKind {
-    /// Unit variant (e.g., `None` in Option)
-    Unit,
-
-    /// Tuple variant with unnamed fields (e.g., `Some(T)` in Option)
-    Tuple,
-
-    /// Struct variant with named fields (e.g., `Struct { field: T }`)
-    Struct,
-}
-
-/// All possible representations for Rust enums
+/// All possible representations for Rust enums — ie. the type/size of the discriminant
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 #[repr(C)]
 #[non_exhaustive]

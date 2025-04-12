@@ -1,5 +1,4 @@
-use crate::PokeValueUninit;
-use facet_core::{MapDef, MapVTable, Opaque, OpaqueConst, OpaqueUninit, Shape};
+use facet_core::{MapDef, MapVTable, Opaque, OpaqueConst, Shape};
 
 /// Allows poking a map (inserting, etc.)
 pub struct PokeMap<'mem> {
