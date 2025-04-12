@@ -1,4 +1,4 @@
-use facet_core::Field;
+use facet_core::{Facet, Field};
 
 use crate::ReflectError;
 
@@ -7,10 +7,29 @@ use super::{PokeStructUninit, PokeValueUninit};
 /// We're essentially building a graph of slots we're initializing —
 /// when we're done initializing something, we need to be able to go back
 /// to the parent.
-enum Parent<'mem> {
-    Slot(Box<Slot<'mem>>),
-    StructSlot(Box<StructSlot<'mem>>), // TODO: we can probably avoid box allocations by using arenas 🤷
-                                       // also, let's worry about enums later
+pub enum Parent<'mem> {
+    StructUninit(PokeStructUninit<'mem>),
+    StructSlot(Box<StructSlot<'mem>>),
+}
+
+impl<'mem> Parent<'mem> {
+    /// Assumes that the field is initialized, and returns the parent.
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure that the field is initialized.
+    unsafe fn assume_field_init(self, index: usize) -> Parent<'mem> {
+        match self {
+            Parent::StructUninit(mut storage) => {
+                storage.iset.set(index);
+                Parent::StructUninit(storage)
+            }
+            Parent::StructSlot(mut storage) => {
+                storage.storage.iset.set(index);
+                Parent::StructSlot(storage)
+            }
+        }
+    }
 }
 
 /// The memory location for a struct or enum field.
@@ -21,23 +40,30 @@ enum Parent<'mem> {
 pub struct Slot<'mem> {
     pub(crate) parent: Parent<'mem>,
     pub(crate) value: PokeValueUninit<'mem>,
-    pub(crate) field: Field,
     pub(crate) index: usize,
 }
 
 impl<'mem> Slot<'mem> {
     /// Assign this field, get back the parent with the field marked as initialized.
-    pub fn set<T>(self, t: T) -> Parent<'mem> {
-        self.value.set(t);
-        unsafe { self.assume_init() }
+    pub fn set<T: Facet>(self, t: T) -> Parent<'mem> {
+        let Self {
+            value,
+            parent,
+            index,
+        } = self;
+        value.put(t);
+        unsafe { parent.assume_field_init(index) }
     }
 
     #[inline(always)]
     unsafe fn assume_init(self) -> Parent<'mem> {
-        unsafe {
-            self.parent.assume_field_init(self.index);
-        }
-        self.parent
+        let Self {
+            value,
+            parent,
+            index,
+        } = self;
+        drop(value);
+        unsafe { parent.assume_field_init(index) }
     }
 
     pub fn into_struct(self) -> Result<StructSlot<'mem>, Self> {

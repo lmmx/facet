@@ -1,3 +1,5 @@
+use facet_core::Field;
+
 /// Keeps track of which fields were initialized, up to 64 fields
 #[derive(Clone, Copy, Default)]
 pub struct ISet(u64);

@@ -4,39 +4,37 @@ use facet_core::{
 
 use crate::PeekValue;
 
+use super::PokeValue;
+
 /// Allows mutating an initialized smart pointer
 pub struct PokeSmartPointer<'mem> {
-    data: Opaque<'mem>,
-    shape: &'static Shape,
-    def: SmartPointerDef,
+    pub(crate) value: PokeValue<'mem>,
+
+    pub(crate) def: SmartPointerDef,
 }
 
 impl<'mem> PokeSmartPointer<'mem> {
-    /// Creates a new smart pointer poke
-    ///
-    /// # Safety
-    ///
-    /// `data` must be properly aligned and sized for this shape.
-    pub(crate) unsafe fn new(
-        data: Opaque<'mem>,
-        shape: &'static Shape,
-        def: SmartPointerDef,
-    ) -> Self {
-        Self { data, shape, def }
-    }
-
-    /// Returns the shape for this smart pointer.
+    /// Shape getter
+    #[inline(always)]
     pub fn shape(&self) -> &'static Shape {
-        self.shape
+        self.value.shape()
     }
 
-    /// Returns the smart pointer definition.
+    /// Def getter
+    #[inline(always)]
     pub fn def(&self) -> &SmartPointerDef {
         &self.def
     }
 
+    /// Returns the data
+    #[inline(always)]
+    fn data(&self) -> Opaque<'mem> {
+        self.value.data
+    }
+
     /// Returns the smart pointer vtable
-    pub fn vtable(&self) -> &'static SmartPointerVTable {
+    #[inline(always)]
+    fn vtable(&self) -> &'static SmartPointerVTable {
         self.def.vtable
     }
 
@@ -68,18 +66,17 @@ impl<'mem> PokeSmartPointer<'mem> {
     /// Attempts to borrow the inner value if the smart pointer supports it.
     pub fn try_borrow(&self) -> Option<PeekValue<'_>> {
         let borrow_fn = self.def.vtable.borrow_fn?;
-        let opaque = unsafe { borrow_fn(self.data.as_const()) };
+        let opaque = unsafe { borrow_fn(self.data().as_const()) };
         Some(unsafe { PeekValue::unchecked_new(opaque, self.def.t) })
     }
 
     /// Attempts to upgrade this pointer if it's a weak reference.
     pub fn try_upgrade(&self) -> Option<Self> {
         let upgrade_fn = self.def.vtable.try_upgrade_fn?;
-        let opaque = unsafe { upgrade_fn(self.data)? };
+        let (data, shape) = unsafe { upgrade_fn(self.data())? };
         Some(Self {
-            data: opaque,
-            shape: self.shape,
-            def: self.def,
+            value: PokeValue { data, shape },
+            def: self.def.clone(),
         })
     }
 
@@ -87,7 +84,7 @@ impl<'mem> PokeSmartPointer<'mem> {
     pub fn try_lock(&self) -> Option<Result<PokeSmartPointerWriteGuard<'_>, ()>> {
         let lock_fn = self.def.vtable.lock_fn?;
         Some(unsafe {
-            lock_fn(self.data.as_const())
+            lock_fn(self.data().as_const())
                 .map(|result| PokeSmartPointerWriteGuard::from_lock_result(result, self.def.t))
         })
     }
@@ -96,7 +93,7 @@ impl<'mem> PokeSmartPointer<'mem> {
     pub fn try_read(&self) -> Option<Result<PokeSmartPointerReadGuard<'_>, ()>> {
         let read_fn = self.def.vtable.read_fn?;
         Some(unsafe {
-            read_fn(self.data.as_const())
+            read_fn(self.data().as_const())
                 .map(|result| PokeSmartPointerReadGuard::from_lock_result(result, self.def.t))
         })
     }
@@ -105,7 +102,7 @@ impl<'mem> PokeSmartPointer<'mem> {
     pub fn try_write(&self) -> Option<Result<PokeSmartPointerWriteGuard<'_>, ()>> {
         let write_fn = self.def.vtable.write_fn?;
         Some(unsafe {
-            write_fn(self.data.as_const())
+            write_fn(self.data().as_const())
                 .map(|result| PokeSmartPointerWriteGuard::from_lock_result(result, self.def.t))
         })
     }
@@ -113,7 +110,7 @@ impl<'mem> PokeSmartPointer<'mem> {
     /// Get a reference to the underlying PokeValue
     #[inline(always)]
     pub fn into_value(self) -> crate::PokeValue<'mem> {
-        unsafe { crate::PokeValue::new(self.data, self.shape) }
+        self.value
     }
 
     /// Moves `U` out of this `PokeSmartPointer`.

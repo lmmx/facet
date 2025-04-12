@@ -1,4 +1,4 @@
-use crate::{ScalarType, peek::Peek};
+use crate::ScalarType;
 use facet_core::{Facet, Opaque, Shape, ValueVTable};
 
 /// Lets you modify an initialized value (implements read-write [`ValueVTable`] proxies)
@@ -21,11 +21,6 @@ impl<'mem> PokeValue<'mem> {
     #[inline(always)]
     fn vtable(&self) -> &'static ValueVTable {
         self.shape.vtable
-    }
-
-    /// Gets a read-only view of the value
-    pub fn as_peek(&self) -> Peek<'_> {
-        unsafe { Peek::unchecked_new(self.data.as_const(), self.shape) }
     }
 
     /// Replace the current value with a new one of the same type

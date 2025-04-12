@@ -1,8 +1,8 @@
-use facet_core::{Facet, FieldError, Fields, Shape};
+use facet_core::{Facet, FieldError, Fields, Shape, Struct};
 
 use crate::ReflectError;
 
-use super::{Guard, ISet, PokeStruct, PokeValue, PokeValueUninit};
+use super::{Guard, ISet, PokeStruct, PokeValue, PokeValueUninit, Slot};
 
 #[cfg(feature = "alloc")]
 extern crate alloc;
@@ -104,7 +104,6 @@ impl<'mem> PokeStructUninit<'mem> {
         boxed
     }
 
-    /// Gets a field, by name
     pub(crate) unsafe fn field_uninit_by_name(
         &self,
         name: &str,
@@ -118,13 +117,6 @@ impl<'mem> PokeStructUninit<'mem> {
         Ok((index, self.field(index)?))
     }
 
-    /// Get a field writer for a field by index.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if:
-    /// - The shape doesn't represent a struct.
-    /// - The index is out of bounds.
     pub(crate) unsafe fn field_uninit(
         &self,
         index: usize,
@@ -138,6 +130,21 @@ impl<'mem> PokeStructUninit<'mem> {
             data: unsafe { self.value.data.field_uninit_at(field.offset) },
             shape: field.shape,
         })
+    }
+
+    /// Gets a slot for a given field, by index
+    pub fn field(self, index: usize) -> Slot<'mem> {
+        if index >= self.def.fields.len() {
+            panic!("Index out of bounds");
+        }
+        let field = self.def.fields[index];
+
+        Slot {
+            parent: Parent::StructUninit(self),
+            value: self.value,
+            field,
+            index,
+        }
     }
 }
 

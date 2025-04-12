@@ -21,7 +21,7 @@ impl<'mem> PokeEnum<'mem> {
     /// Shape getter
     #[inline(always)]
     pub fn shape(&self) -> &'static Shape {
-        self.shape
+        self.storage.shape()
     }
 
     /// Enum definition getter
