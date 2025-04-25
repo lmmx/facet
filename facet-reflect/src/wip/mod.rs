@@ -10,7 +10,8 @@ use alloc::{vec, vec::Vec};
 use bitflags::bitflags;
 use core::{fmt, marker::PhantomData};
 use facet_core::{
-    Def, DefaultInPlaceFn, Facet, FieldError, PtrConst, PtrMut, PtrUninit, Shape, Variant,
+    Def, DefaultInPlaceFn, Facet, FieldError, PtrConst, PtrMut, PtrUninit, ScalarAffinity, Shape,
+    Variant,
 };
 use flat_map::FlatMap;
 
@@ -1832,6 +1833,19 @@ impl<'facet_lifetime> Wip<'facet_lifetime> {
                         false
                     };
 
+                    // Check if we're dealing with an empty unit type
+                    let is_empty_unit = match parent_shape.def {
+                        // Check for empty tuple struct
+                        Def::Struct(sd)
+                            if sd.kind == facet_core::StructKind::Tuple && sd.fields.is_empty() =>
+                        {
+                            true
+                        }
+                        // Check for scalar with Empty affinity
+                        Def::Scalar(s) if matches!(s.affinity, ScalarAffinity::Empty(_)) => true,
+                        _ => false,
+                    };
+
                     // Make sure the parent is a list, array, or tuple
                     if matches!(parent_shape.def, Def::List(_)) {
                         // Get the list vtable from the ListDef
@@ -1852,6 +1866,16 @@ impl<'facet_lifetime> Wip<'facet_lifetime> {
                             }
                         } else {
                             panic!("parent frame is not a list type");
+                        }
+                    } else if is_empty_unit {
+                        trace!(
+                            "[{}] Handling empty unit type {}",
+                            frame_len,
+                            parent_shape.blue()
+                        );
+                        // We need to mark the unit type as fully initialized
+                        unsafe {
+                            parent_frame.mark_fully_initialized();
                         }
                     } else if is_tuple {
                         // For tuples, we need to set the field directly

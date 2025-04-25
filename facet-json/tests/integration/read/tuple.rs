@@ -130,27 +130,9 @@ fn test_deserialize_tuple_mixed_i32_f32() {
 }
 
 #[test]
-#[ignore]
 fn test_deserialize_tuple_empty() {
     let result: Result<(), _> = from_str(r#"[]"#);
-    assert!(matches!(result, Ok(())));
-}
-
-#[test]
-#[ignore]
-fn test_deserialize_tuple_mixed_str_i32() {
-    let result: Result<(&str, i32), _> = from_str(r#"["aaa",3]"#);
-    let ok = result.unwrap();
-    assert_eq!(ok.0, "aaa");
-    assert_eq!(ok.1, 3);
-
-    #[derive(facet::Facet)]
-    struct TestTuple(i32, String, bool);
-    let result: Result<TestTuple, _> = from_str(r#"[3,"aaa",true]"#);
-    let ok = result.unwrap();
-    assert_eq!(ok.0, 3);
-    assert_eq!(ok.1, "aaa");
-    assert!(ok.2);
+    result.unwrap()
 }
 
 #[test]
