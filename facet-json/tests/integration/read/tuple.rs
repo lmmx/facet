@@ -1,6 +1,25 @@
 use facet_json::from_str;
 
 #[test]
+fn test_deserialize_tuple_string() {
+    let result: Result<(String,), _> = from_str(r#"[""]"#);
+    let ok = result.unwrap();
+    assert_eq!(ok.0, "");
+
+    let result: Result<(String, String, String), _> = from_str(r#"["un","deux","trois"]"#);
+    let ok = result.unwrap();
+    assert_eq!(ok.0, "un");
+    assert_eq!(ok.1, "deux");
+    assert_eq!(ok.2, "trois");
+
+    let result: Result<(String, String, String), _> = from_str(r#"["🐑","🐑🐑","🐑🐑🐑"]"#);
+    let ok = result.unwrap();
+    assert_eq!(ok.0, "🐑");
+    assert_eq!(ok.1, "🐑🐑");
+    assert_eq!(ok.2, "🐑🐑🐑");
+}
+
+#[test]
 fn test_deserialize_tuple_i32() {
     let result: Result<(i32,), _> = from_str(r#"[10]"#);
     let ok = result.unwrap();
@@ -74,6 +93,14 @@ fn test_deserialize_tuple_f32() {
     let ok = result.unwrap();
     assert_eq!(ok.0, -1.0);
     assert_eq!(ok.1, 0.0);
+}
+
+#[test]
+fn test_deserialize_tuple_mixed_string_i32() {
+    let result: Result<(String, i32), _> = from_str(r#"["aaa",100]"#);
+    let ok = result.unwrap();
+    assert_eq!(ok.0, "aaa");
+    assert_eq!(ok.1, 100);
 }
 
 #[test]
