@@ -1444,16 +1444,22 @@ impl<'facet_lifetime> Wip<'facet_lifetime> {
                 // Find the next uninitialized field
                 let field_index = {
                     let f = self.frames.last().unwrap();
-                    let mut idx = 0;
-                    for (i, _) in sd.fields.iter().enumerate() {
-                        if !f.istate.fields.has(i + 1) {
-                            // +1 because the first field (0) is for the struct itself
-                            idx = i;
-                            break;
-                        }
-                    }
-                    idx
+                    // IMPORTANT: Keep track of which index we're currently processing
+                    // Store this in the frame's istate for later use
+                    let next_idx = f.istate.list_index.unwrap_or(0);
+                    // Update the list_index for next time
+                    let frame = self.frames.last_mut().unwrap();
+                    frame.istate.list_index = Some(next_idx + 1);
+                    next_idx
                 };
+
+                // Make sure the field index is valid
+                if field_index >= sd.fields.len() {
+                    return Err(ReflectError::FieldError {
+                        shape: seq_shape,
+                        field_error: FieldError::NoSuchField,
+                    });
+                }
 
                 // Get the field at that index
                 let field = &sd.fields[field_index];
@@ -1850,27 +1856,24 @@ impl<'facet_lifetime> Wip<'facet_lifetime> {
                     } else if is_tuple {
                         // For tuples, we need to set the field directly
                         if let Def::Struct(sd) = parent_shape.def {
-                            // Find the next uninitialized field
-                            let mut field_index = 0;
-                            for (i, _) in sd.fields.iter().enumerate() {
-                                if !parent_frame.istate.fields.has(i + 1) {
-                                    // +1 because the first field (0) is for the struct itself
-                                    field_index = i;
-                                    break;
-                                }
+                            // Get the field index from list_index we saved during push
+                            let previous_index = parent_frame.istate.list_index.unwrap_or(1);
+                            let field_index = previous_index - 1; // -1 because we already incremented in push
+
+                            // Make sure the field index is valid
+                            if field_index >= sd.fields.len() {
+                                panic!(
+                                    "Field index {} out of bounds for tuple with {} fields",
+                                    field_index,
+                                    sd.fields.len()
+                                );
                             }
 
-                            // Map JSON array indices to tuple field indices correctly
-                            // Tuple fields are stored in reverse order, so we need to map:
-                            // - JSON array index 0 → tuple.0 → fields[N-1] (where N is the number of fields)
-                            // - JSON array index 1 → tuple.1 → fields[N-2]
-                            // - and so on...
-                            let mapped_field_index = sd.fields.len() - 1 - field_index;
-                            let field = &sd.fields[mapped_field_index];
+                            // Use the correct field index directly
+                            let field = &sd.fields[field_index];
                             trace!(
-                                "[{}] Setting tuple field {} (mapped from {}) of {}",
+                                "[{}] Setting tuple field {} of {}",
                                 frame_len,
-                                mapped_field_index,
                                 field_index,
                                 parent_shape.blue()
                             );
@@ -1885,7 +1888,7 @@ impl<'facet_lifetime> Wip<'facet_lifetime> {
                                     )
                                     .unwrap();
 
-                                // Mark the field as initialized - we still use the original index for tracking
+                                // Mark the field as initialized - we use field_index+1
                                 parent_frame.istate.fields.set(field_index + 1); // +1 because the first field (0) is for the struct itself
 
                                 // Mark the element as moved

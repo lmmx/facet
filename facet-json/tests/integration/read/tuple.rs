@@ -14,22 +14,22 @@ fn test_deserialize_tuple_i32() {
     let result: Result<(i32, i32, i32), _> = from_str(r#"[10,20,30]"#);
     let ok = result.unwrap();
     assert_eq!(ok.0, 10);
-    assert_eq!(ok.1, 0);
+    assert_eq!(ok.1, 20);
     assert_eq!(ok.2, 30);
 
     let result: Result<(i32, i32, i32, i32), _> = from_str(r#"[10,20,30,40]"#);
     let ok = result.unwrap();
     assert_eq!(ok.0, 10);
-    assert_eq!(ok.1, 0);
-    assert_eq!(ok.2, 0);
+    assert_eq!(ok.1, 20);
+    assert_eq!(ok.2, 30);
     assert_eq!(ok.3, 40);
 
     let result: Result<(i32, i32, i32, i32, i32), _> = from_str(r#"[10,20,30,40,50]"#);
     let ok = result.unwrap();
     assert_eq!(ok.0, 10);
-    assert_eq!(ok.1, 0);
-    assert_eq!(ok.2, 0);
-    assert_eq!(ok.3, 0);
+    assert_eq!(ok.1, 20);
+    assert_eq!(ok.2, 30);
+    assert_eq!(ok.3, 40);
     assert_eq!(ok.4, 50);
 }
 
