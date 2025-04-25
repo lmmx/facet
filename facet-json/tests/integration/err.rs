@@ -91,3 +91,21 @@ fn unknown_field_with_rename() -> eyre::Result<()> {
 
     Ok(())
 }
+
+#[test]
+fn test_deserialize_tuple_empty() -> eyre::Result<()> {
+    let result: Result<(), _> = from_str(r#"[10]"#);
+    let err = result.unwrap_err();
+    insta::assert_snapshot!(err);
+
+    Ok(())
+}
+
+#[test]
+fn test_deserialize_tuple_wrong_size() -> eyre::Result<()> {
+    let result: Result<(i32,), _> = from_str(r#"[10,20]"#);
+    let err = result.unwrap_err();
+    insta::assert_snapshot!(err);
+
+    Ok(())
+}

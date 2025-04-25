@@ -104,6 +104,13 @@ fn test_deserialize_tuple_mixed_i32_f32() {
 
 #[test]
 #[ignore]
+fn test_deserialize_tuple_empty() {
+    let result: Result<(), _> = from_str(r#"[]"#);
+    assert!(matches!(result, Ok(())));
+}
+
+#[test]
+#[ignore]
 fn test_deserialize_tuple_mixed_str_i32() {
     let result: Result<(&str, i32), _> = from_str(r#"["aaa",3]"#);
     let ok = result.unwrap();
