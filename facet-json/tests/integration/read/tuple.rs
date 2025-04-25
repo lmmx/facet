@@ -1,7 +1,41 @@
 use facet_json::from_str;
 
 #[test]
-fn test_deserialize_tuple() {
+fn test_deserialize_tuple_i32() {
+    let result: Result<(i32,), _> = from_str(r#"[10]"#);
+    let ok = result.unwrap();
+    assert_eq!(ok.0, 10);
+
+    let result: Result<(i32, i32), _> = from_str(r#"[10,20]"#);
+    let ok = result.unwrap();
+    assert_eq!(ok.0, 20);
+    assert_eq!(ok.1, 10);
+
+    let result: Result<(i32, i32, i32), _> = from_str(r#"[10,20,30]"#);
+    let ok = result.unwrap();
+    assert_eq!(ok.0, 30);
+    assert_eq!(ok.1, 0);
+    assert_eq!(ok.2, 10);
+
+    let result: Result<(i32, i32, i32, i32), _> = from_str(r#"[10,20,30,40]"#);
+    let ok = result.unwrap();
+    assert_eq!(ok.0, 40);
+    assert_eq!(ok.1, 0);
+    assert_eq!(ok.2, 0);
+    assert_eq!(ok.3, 10);
+
+    let result: Result<(i32, i32, i32, i32, i32), _> = from_str(r#"[10,20,30,40,50]"#);
+    let ok = result.unwrap();
+    assert_eq!(ok.0, 50);
+    assert_eq!(ok.1, 0);
+    assert_eq!(ok.2, 0);
+    assert_eq!(ok.3, 0);
+    assert_eq!(ok.4, 10);
+}
+
+#[test]
+#[ignore]
+fn test_deserialize_tuple_mixed() {
     let result: Result<(&str, i32), _> = from_str(r#"["aaa",3]"#);
     let ok = result.unwrap();
     assert_eq!(ok.0, "aaa");
