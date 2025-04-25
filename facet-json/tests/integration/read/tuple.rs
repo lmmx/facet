@@ -1,7 +1,6 @@
 use facet_json::from_str;
 
 #[test]
-#[ignore]
 fn test_deserialize_tuple() {
     let result: Result<(&str, i32), _> = from_str(r#"["aaa",3]"#);
     let ok = result.unwrap();

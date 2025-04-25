@@ -3,7 +3,7 @@ use alloc::string::ToString;
 use alloc::vec;
 use facet_core::Characteristic;
 use facet_core::Def;
-use facet_core::Facet;
+use facet_core::{Facet, StructKind};
 use facet_reflect::ReflectError;
 use facet_reflect::{HeapValue, Wip};
 use log::trace;
@@ -401,6 +401,20 @@ pub fn from_slice_wip<'input: 'facet, 'facet>(
                                     Def::List(_) => {
                                         trace!("Array starting for list ({})!", wip.shape().blue());
                                         reflect!(put_default());
+                                    }
+                                    Def::Struct(s) => {
+                                        if s.kind == StructKind::Tuple {
+                                            trace!(
+                                                "Array starting for tuple ({})!",
+                                                wip.shape().blue()
+                                            );
+                                            reflect!(put_default());
+                                        } else {
+                                            bail!(JsonErrorKind::UnsupportedType {
+                                                got: wip.shape(),
+                                                wanted: "array, list, tuple, or slice"
+                                            });
+                                        }
                                     }
                                     _ => {
                                         bail!(JsonErrorKind::UnsupportedType {
