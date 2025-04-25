@@ -152,3 +152,21 @@ fn test_deserialize_tuple_mixed_str_i32() {
     assert_eq!(ok.1, "aaa");
     assert!(ok.2);
 }
+
+#[test]
+fn test_deserialize_tuple_nest() {
+    let result: Result<((String,),), _> = from_str(r#"[["hello"]]"#);
+    let ok = result.unwrap();
+    assert_eq!(ok.0.0, "hello");
+
+    type String1Tuple = (String,);
+    type IntFloatString3Tuple = (i32, f32, String);
+
+    let result: Result<(String1Tuple, IntFloatString3Tuple), _> =
+        from_str(r#"[["hello"],[1,2,"3"]]"#);
+    let ok = result.unwrap();
+    assert_eq!(ok.0.0, "hello");
+    assert_eq!(ok.1.0, 1);
+    assert_eq!(ok.1.1, 2.0);
+    assert_eq!(ok.1.2, "3");
+}
