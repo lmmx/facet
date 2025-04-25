@@ -1860,10 +1860,17 @@ impl<'facet_lifetime> Wip<'facet_lifetime> {
                                 }
                             }
 
-                            let field = &sd.fields[field_index];
+                            // Map JSON array indices to tuple field indices correctly
+                            // Tuple fields are stored in reverse order, so we need to map:
+                            // - JSON array index 0 → tuple.0 → fields[N-1] (where N is the number of fields)
+                            // - JSON array index 1 → tuple.1 → fields[N-2]
+                            // - and so on...
+                            let mapped_field_index = sd.fields.len() - 1 - field_index;
+                            let field = &sd.fields[mapped_field_index];
                             trace!(
-                                "[{}] Setting tuple field {} of {}",
+                                "[{}] Setting tuple field {} (mapped from {}) of {}",
                                 frame_len,
+                                mapped_field_index,
                                 field_index,
                                 parent_shape.blue()
                             );
@@ -1878,7 +1885,7 @@ impl<'facet_lifetime> Wip<'facet_lifetime> {
                                     )
                                     .unwrap();
 
-                                // Mark the field as initialized
+                                // Mark the field as initialized - we still use the original index for tracking
                                 parent_frame.istate.fields.set(field_index + 1); // +1 because the first field (0) is for the struct itself
 
                                 // Mark the element as moved
