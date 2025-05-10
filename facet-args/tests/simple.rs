@@ -58,6 +58,20 @@ fn test_missing_bool_is_false() -> Result<()> {
 }
 
 #[test]
+fn test_missing_default() -> Result<()> {
+    facet_testhelpers::setup();
+
+    #[derive(Facet)]
+    struct Args {
+        #[facet(positional, default = 42)]
+        answer: usize,
+    }
+    let args: Args = facet_args::from_slice(&[])?;
+    assert_eq!(args.answer, 42);
+    Ok(())
+}
+
+#[test]
 fn test_error_non_struct_type_not_supported() -> Result<()> {
     facet_testhelpers::setup();
 
