@@ -17,8 +17,8 @@ pub use error::*;
 
 mod span;
 use facet_core::{
-    Characteristic, Def, Facet, FieldFlags, ScalarAffinity, SequenceType, StructKind, Type,
-    UserType,
+    Characteristic, Def, Facet, FieldFlags, PointerType, ScalarAffinity, SequenceType, StructKind,
+    Type, UserType,
 };
 use owo_colors::OwoColorize;
 pub use span::*;
@@ -611,7 +611,10 @@ impl<'input> StackRunner<'input> {
         &self,
         wip: Wip<'facet>,
         scalar: Scalar<'input>,
-    ) -> Result<Wip<'facet>, DeserError<'input>> {
+    ) -> Result<Wip<'facet>, DeserError<'input>>
+    where
+        'input: 'facet, // 'input outlives 'facet
+    {
         match scalar {
             Scalar::String(cow) => {
                 match wip.innermost_shape().ty {
@@ -632,6 +635,16 @@ impl<'input> StackRunner<'input> {
                             }
                         }
                     }
+                    Type::Pointer(PointerType::Reference(_))
+                        if wip.innermost_shape().is_type::<&str>() =>
+                    {
+                        // This is for handling the &str type
+                        // The Cow may be Borrowed (we may have an owned string but need a &str)
+                        match cow {
+                            Cow::Borrowed(s) => wip.put(s).map_err(|e| self.reflect_err(e)),
+                            Cow::Owned(s) => wip.put(s).map_err(|e| self.reflect_err(e)),
+                        }
+                    }
                     _ => wip.put(cow.to_string()).map_err(|e| self.reflect_err(e)),
                 }
             }
@@ -648,7 +661,10 @@ impl<'input> StackRunner<'input> {
         &mut self,
         mut wip: Wip<'facet>,
         outcome: Spanned<Outcome<'input>>,
-    ) -> Result<Wip<'facet>, DeserError<'input>> {
+    ) -> Result<Wip<'facet>, DeserError<'input>>
+    where
+        'input: 'facet, // 'input must outlive 'facet
+    {
         trace!(
             "Handling value at {} (innermost {})",
             wip.shape().blue(),

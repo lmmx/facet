@@ -5,6 +5,40 @@ use facet::Facet;
 use eyre::{Ok, Result};
 
 #[test]
+fn test_arg_parse_easy() -> Result<()> {
+    facet_testhelpers::setup();
+
+    #[derive(Facet)]
+    struct Args {
+        #[facet(positional)]
+        path: String,
+
+        #[facet(named, short = 'v')]
+        verbose: bool,
+
+        #[facet(named, short = 'j')]
+        concurrency: usize,
+
+        #[facet(named, short = 'x')]
+        consider_casing: usize,
+    }
+
+    let args: Args = facet_args::from_slice(&[
+        "--verbose",
+        "-j",
+        "14",
+        "--consider-casing",
+        "0",
+        "example.rs",
+    ])?;
+    assert!(args.verbose);
+    assert_eq!(args.path, "example.rs");
+    assert_eq!(args.concurrency, 14);
+    assert_eq!(args.consider_casing, 0);
+    Ok(())
+}
+
+#[test]
 fn test_arg_parse() -> Result<()> {
     facet_testhelpers::setup();
 
@@ -149,7 +183,28 @@ fn test_error_missing_value_for_argument() -> Result<()> {
 }
 
 #[test]
-fn test_error_missing_value_for_argument_short() -> Result<()> {
+fn test_error_missing_value_for_argument_short_missed() -> Result<()> {
+    facet_testhelpers::setup();
+
+    #[derive(Facet, Debug)]
+    struct Args {
+        #[facet(named, short = 'j')]
+        concurrency: usize,
+        #[facet(named, short = 'v')]
+        verbose: bool,
+    }
+    let args: Result<Args, _> = facet_args::from_slice(&["-j", "-v"]);
+    let err = args.unwrap_err();
+    assert_eq!(
+        err.message(),
+        "Args error: expected value after argument `j`"
+    );
+
+    Ok(())
+}
+
+#[test]
+fn test_error_missing_value_for_argument_short_eof() -> Result<()> {
     facet_testhelpers::setup();
 
     #[derive(Facet, Debug)]
