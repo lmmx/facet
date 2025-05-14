@@ -1,6 +1,6 @@
 use alloc::{borrow::Cow, format};
 
-use facet_core::Facet;
+use facet_core::{Facet, SequenceType, Type};
 pub use facet_deserialize::{DeserError, DeserErrorKind};
 use facet_deserialize::{
     Expectation, Format, NextData, NextResult, Outcome, Scalar, Span, Spannable, Spanned,
@@ -62,10 +62,75 @@ impl Format for Json {
             let span = Span::new(token.span.start() + token_offset, token.span.len());
 
             let res = match token.node {
-                Token::String(s) => Ok(Spanned {
-                    node: Outcome::Scalar(Scalar::String(Cow::Owned(s))),
-                    span,
-                }),
+                // // Token::String(s) => Ok(Spanned {
+                // //     node: Outcome::Scalar(Scalar::String(Cow::Owned(s))),
+                // //     span,
+                // // }),
+                // Token::String(s) => {
+                //     let shape_type = &nd.wip.shape().ty;
+
+                //     // Direct &str check
+                //     let is_direct_str = nd.wip.shape().is_type::<&str>();
+
+                //     // Check if we're in an array of &str
+                //     let is_str_array_element = match shape_type {
+                //         Type::Sequence(SequenceType::Array(array_type)) => {
+                //             match &array_type.t.ty {
+                //                 // Check if the pointer target is a string type
+                //                 Type::Pointer(ptr_type) => array_type.t.is_type::<&str>(),
+                //                 _ => false
+                //             }
+                //         },
+                //         _ => false
+                //     };
+
+                //     // Now handle the string based on our detection
+                //     let scalar = if is_direct_str || is_str_array_element {
+                //         // Extract the actual string content from the JSON string token
+                //         // (removing surrounding quotes)
+                //         Scalar::String(Cow::Borrowed(&s))
+                //     } else {
+                //         // Normal case - use owned string
+                //         Scalar::String(Cow::Owned(s))
+                //     };
+
+                //     Ok(Spanned {
+                //         node: Outcome::Scalar(scalar),
+                //         span,
+                //     })
+                // }
+                Token::String(s) => {
+                    eprintln!("String token: {:?}", s);
+
+                    // Determine if we need a &str vs String based on the type
+                    let needs_str_reference = match &nd.wip.shape().ty {
+                        Type::Pointer(ptr_type) => true, // Direct &str
+                        Type::Sequence(SequenceType::Array(array_type)) => {
+                            // Check if array element is &str
+                            match &array_type.t.ty {
+                                // Check if the pointer target is a string type
+                                Type::Pointer(ptr_type) => array_type.t.is_type::<&str>(),
+                                _ => false,
+                            }
+                        }
+                        _ => false,
+                    };
+
+                    let scalar = if needs_str_reference {
+                        // WARNING: Memory leak - this creates a string that lives for the entire program
+                        // This is a temporary solution until a proper string arena is implemented
+                        let static_str: &'static str = Box::leak(s.clone().into_boxed_str());
+                        Scalar::String(Cow::Borrowed(static_str))
+                    } else {
+                        // For regular String, use the owned string
+                        Scalar::String(Cow::Owned(s))
+                    };
+
+                    Ok(Spanned {
+                        node: Outcome::Scalar(scalar),
+                        span,
+                    })
+                }
                 Token::F64(n) => Ok(Spanned {
                     node: Outcome::Scalar(Scalar::F64(n)),
                     span,

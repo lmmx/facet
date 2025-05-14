@@ -84,8 +84,9 @@ fn test_nested_array_parsing() {
 }
 
 #[derive(Debug, Facet, PartialEq)]
-struct MixedArrayTypes {
+struct MixedArrayTypes<'a> {
     strings: [String; 2],
+    slices: [&'a str; 2],
     numbers: [i32; 3],
     booleans: [bool; 2],
 }
@@ -96,6 +97,7 @@ fn test_mixed_array_types() {
 
     let json = r#"{
         "strings": ["hello", "world"],
+        "slices": ["foo", "bar"],
         "numbers": [42, 123, 999],
         "booleans": [true, false]
     }"#;
@@ -107,6 +109,7 @@ fn test_mixed_array_types() {
                 data,
                 MixedArrayTypes {
                     strings: ["hello".to_string(), "world".to_string()],
+                    slices: ["foo", "bar"],
                     numbers: [42, 123, 999],
                     booleans: [true, false],
                 }

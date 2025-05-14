@@ -27,6 +27,18 @@ fn json_read_vec() -> Result<()> {
 }
 
 #[test]
+fn json_read_vec_string_ptr() -> Result<()> {
+    facet_testhelpers::setup();
+
+    let json = r#"["aa", "bb", "cc"]"#;
+
+    let v: Vec<&str> = from_str(json)?;
+    assert_eq!(v, vec!["aa", "bb", "cc"]);
+
+    Ok(())
+}
+
+#[test]
 fn test_two_empty_vecs() -> Result<()> {
     facet_testhelpers::setup();
 

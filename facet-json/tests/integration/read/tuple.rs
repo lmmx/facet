@@ -20,6 +20,19 @@ fn test_deserialize_tuple_string() -> Result<()> {
 }
 
 #[test]
+fn test_deserialize_tuple_string_ptr() -> Result<()> {
+    // BUG: goes back to the start, doesn't proceed!
+    let ok: (&str,) = from_str(r#"[""]"#)?;
+    assert_eq!(ok.0, "");
+
+    let ok: (&str, &str) = from_str(r#"["uno","dos"]"#)?;
+    assert_eq!(ok.0, "uno");
+    assert_eq!(ok.1, "dos");
+
+    Ok(())
+}
+
+#[test]
 fn test_deserialize_tuple_i32() -> Result<()> {
     let ok: (i32,) = from_str(r#"[10]"#)?;
     assert_eq!(ok.0, 10);

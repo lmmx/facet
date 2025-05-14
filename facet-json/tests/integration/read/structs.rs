@@ -21,6 +21,24 @@ fn json_read_struct_twofields() -> Result<()> {
 }
 
 #[test]
+fn json_read_struct_string_ptr() -> Result<()> {
+    facet_testhelpers::setup();
+
+    #[derive(Facet)]
+    struct TestStruct<'a> {
+        name: &'a str,
+        age: u64,
+    }
+    let json = r#"{"name": "Bob", "age": 123}"#;
+
+    let s: TestStruct = from_str(json)?;
+    assert_eq!(s.name, "Bob");
+    assert_eq!(s.age, 123);
+
+    Ok(())
+}
+
+#[test]
 fn json_read_struct_threefields() -> Result<()> {
     facet_testhelpers::setup();
 
