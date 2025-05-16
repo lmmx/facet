@@ -260,10 +260,10 @@ where
 {
     let source = format.source();
     let wip = Wip::alloc_shape(T::SHAPE)
-        .map_err(|e| DeserError::new_reflect(e, input, Span { start: 0, len: 0 }, source))?;
+        .map_err(|e| DeserError::new_reflect(e, input, Span::default(), source))?;
     deserialize_wip(wip, input, format)?
         .materialize()
-        .map_err(|e| DeserError::new_reflect(e, input, Span { start: 0, len: 0 }, source))
+        .map_err(|e| DeserError::new_reflect(e, input, Span::default(), source))
 }
 
 /// Deserializes a working-in-progress value into a fully materialized heap value.

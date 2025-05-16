@@ -8,7 +8,7 @@ use facet_reflect::{ReflectError, VariantError};
 use owo_colors::OwoColorize;
 
 use crate::debug::InputDebug;
-use crate::{Outcome, Span};
+use crate::{Cooked, Outcome, Span};
 
 /// A JSON parse error, with context. Never would've guessed huh.
 #[derive(Debug)]
@@ -17,7 +17,7 @@ pub struct DeserError<'input, 'shape> {
     pub input: alloc::borrow::Cow<'input, [u8]>,
 
     /// Where the error occured
-    pub span: Span,
+    pub span: Span<Cooked>,
 
     /// The specific error that occurred while parsing the JSON.
     pub kind: DeserErrorKind<'shape>,
@@ -139,7 +139,7 @@ impl<'input, 'shape> DeserError<'input, 'shape> {
     pub fn new<I>(
         kind: DeserErrorKind<'shape>,
         input: &'input I,
-        span: Span,
+        span: Span<Cooked>,
         source_id: &'static str,
     ) -> Self
     where
@@ -164,7 +164,7 @@ impl<'input, 'shape> DeserError<'input, 'shape> {
     pub(crate) fn new_reflect<I>(
         e: ReflectError<'shape>,
         input: &'input I,
-        span: Span,
+        span: Span<Cooked>,
         source_id: &'static str,
     ) -> Self
     where
