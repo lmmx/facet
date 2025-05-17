@@ -20,10 +20,18 @@ mod tests {
 
     impl Format for MockByteFormat {
         type Input<'input> = [u8];
-        type SpanType = Raw;
+        type SpanType = Cooked;
 
         fn source(&self) -> &'static str {
             "bin"
+        }
+
+        fn cook_span<'a>(
+            &self,
+            span: Span<Self::SpanType>,
+            _input: &'a Self::Input<'a>,
+        ) -> Span<Cooked> {
+            span
         }
 
         /// Generate tokens for deserialization in a predetermined sequence.
@@ -156,7 +164,7 @@ mod tests {
         let dummy_bytes: &[u8] = b"xy";
 
         // Deserialize using the byte-based format
-        let result: TestConfig = deserialize(dummy_bytes, MockByteFormat)
+        let result: TestConfig = deserialize(dummy_bytes, &mut MockByteFormat)
             .expect("Failed to deserialize from byte slice");
 
         // Verify expected field value
@@ -176,10 +184,19 @@ mod tests {
 
     impl Format for MockCliFormat {
         type Input<'input> = [&'input str];
-        type SpanType = Cooked;
+        type SpanType = Raw;
 
         fn source(&self) -> &'static str {
             "cli"
+        }
+
+        /// Real implementation would convert arg index to byte index
+        fn cook_span<'a>(
+            &self,
+            span: Span<Self::SpanType>,
+            _input: &'a Self::Input<'a>,
+        ) -> Span<Cooked> {
+            Span::<Cooked>::new(span.start(), span.len())
         }
 
         /// Generate tokens for processing CLI-like arguments.
@@ -342,8 +359,8 @@ mod tests {
         let args: &[&str] = &["--nom", "test"];
 
         // Deserialize using the string-based format
-        let result: TestConfig =
-            deserialize(args, MockCliFormat).expect("Failed to deserialize from string slices");
+        let result: TestConfig = deserialize(args, &mut MockCliFormat)
+            .expect("Failed to deserialize from string slices");
 
         // Verify expected field value
         assert_eq!(

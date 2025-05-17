@@ -3,8 +3,8 @@ use alloc::string::ToString;
 use core::fmt;
 use facet_core::{Facet, FieldAttribute, Type, UserType};
 use facet_deserialize::{
-    DeserError, DeserErrorKind, Expectation, Format, NextData, NextResult, Outcome, Raw, Scalar,
-    Span, Spanned,
+    Cooked, DeserError, DeserErrorKind, Expectation, Format, NextData, NextResult, Outcome, Raw,
+    Scalar, Span, Spanned,
 };
 
 /// Command-line argument format for Facet deserialization
@@ -103,7 +103,7 @@ pub fn from_slice<'input, 'facet, 'shape, T: Facet<'facet>>(
 where
     'input: 'facet + 'shape,
 {
-    match facet_deserialize::deserialize(args, Cli) {
+    match facet_deserialize::deserialize(args, &mut Cli) {
         Ok(value) => Ok(value),
         Err(error) => {
             if is_span_already_char_based(&error) {
