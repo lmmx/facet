@@ -27,9 +27,9 @@ pub struct DeserError<'input, 'shape, C = Cooked> {
     pub source_id: &'static str,
 }
 
-impl<'input, C, 'shape> DeserError<'input, C, 'shape> {
+impl<'input, 'shape, C> DeserError<'input, 'shape, C> {
     /// Converts the error into an owned error.
-    pub fn into_owned(self) -> DeserError<'static, C> {
+    pub fn into_owned(self) -> DeserError<'static, 'shape, C> {
         DeserError {
             input: self.input.into_owned().into(),
             span: self.span,
@@ -40,7 +40,7 @@ impl<'input, C, 'shape> DeserError<'input, C, 'shape> {
 
     // pub fn with_span<D>(mut self, span: Span<D>) -> DeserError<'input, D> {
     /// Sets the span of this error
-    pub fn with_span<D>(self, span: Span<D>) -> DeserError<'input, D> {
+    pub fn with_span<D>(self, span: Span<D>) -> DeserError<'input, 'shape, D> {
         // self.span = span;
         DeserError {
             input: self.input,
@@ -141,7 +141,7 @@ pub enum DeserErrorKind<'shape> {
     VariantError(VariantError),
 }
 
-impl<'input, C, 'shape> DeserError<'input, C, 'shape> {
+impl<'input, 'shape, C> DeserError<'input, 'shape, C> {
     /// Creates a new deser error, preserving input and location context for accurate reporting.
     pub fn new<I>(
         kind: DeserErrorKind<'shape>,
