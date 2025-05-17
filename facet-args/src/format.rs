@@ -129,6 +129,16 @@ impl Format for Cli {
         "args"
     }
 
+    fn cook_span<'a>(&self, span: Span<Raw>, args: &'a Self::Input<'a>) -> Span<Cooked> {
+        // CLI-specific span conversion logic
+        Self::char_span(
+            args,
+            span.start().min(args.len().saturating_sub(1)),
+            None,
+            None,
+        )
+    }
+
     fn next<'input, 'facet, 'shape>(
         &mut self,
         nd: NextData<'input, 'facet, 'shape, Self::Input<'input>>,

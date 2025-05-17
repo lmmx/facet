@@ -18,6 +18,7 @@ pub use debug::InputDebug;
 pub use error::*;
 
 mod span;
+use facet_core::spez::Spez;
 use facet_core::{
     Characteristic, Def, Facet, FieldFlags, PointerType, ScalarAffinity, SequenceType, StructKind,
     Type, UserType,
@@ -177,6 +178,10 @@ pub trait Format {
     /// The lowercase source ID of the format, used for error reporting.
     fn source(&self) -> &'static str;
 
+    /// Convert a Span from this format's Raw form to Cooked form (if SpanType is Cooked, keep it)
+    fn cook_span<'a>(&self, span: Span<Self::SpanType>, input: &'a Self::Input<'a>)
+    -> Span<Cooked>;
+
     /// Advance the parser with current state and expectation, producing the next outcome or error.
     fn next<'input, 'facet, 'shape>(
         &mut self,
@@ -246,13 +251,43 @@ pub enum PopReason {
     Some,
 }
 
+// /// Helper function to convert spans in errors based on format's SpanType
+// fn convert_error_span<'input, 'facet, F>(
+//     format: &F,
+//     input: &'input F::Input<'input>,
+//     mut error: DeserError<'input>,
+// ) -> DeserError<'input>
+// where
+//     F: Format,
+//     F::Input<'input>: InputDebug,
+//     'input: 'facet,
+// {
+//     // Use the Spez dispatch macro to handle span conversion
+//     let new_span = cook_span_dispatch!(format, error.span, input);
+//
+//     // Only create a new error if the span actually changed.
+//     // We expect a Span<Cooked> to return self so we'd detect that here
+//     if new_span != error.span {
+//         // If we had Span<Raw> and needed to convert its span coordinate system
+//         // TODO: I think this can be changed to just `.with_span(new_span)`
+//         error = DeserError {
+//             input: error.input,
+//             span: new_span,
+//             kind: error.kind,
+//             source_id: error.source_id,
+//         };
+//     }
+//
+//     error
+// }
+
 /// Deserialize a value of type `T` from raw input bytes using format `F`.
 ///
 /// This function sets up the initial working state and drives the deserialization process,
 /// ensuring that the resulting value is fully materialized and valid.
 pub fn deserialize<'input, 'facet, 'shape, T, F>(
     input: &'input F::Input<'input>,
-    format: F,
+    format: &mut F,
 ) -> Result<T, DeserError<'input, 'shape>>
 where
     T: Facet<'facet>,
@@ -261,12 +296,35 @@ where
     'input: 'facet,
     'shape: 'input,
 {
-    let source = format.source();
-    let wip = Wip::alloc_shape(T::SHAPE)
-        .map_err(|e| DeserError::new_reflect(e, input, Span::default(), source))?;
-    deserialize_wip(wip, input, format)?
-        .materialize()
-        .map_err(|e| DeserError::new_reflect(e, input, Span::default(), source))
+    // Run the entire deserialization process and capture any errors
+    let result = {
+        let source = format.source();
+        let wip = Wip::alloc_shape(T::SHAPE)
+            .map_err(|e| DeserError::new_reflect(e, input, Span::default(), source))?;
+        deserialize_wip(wip, input, format)?
+            .materialize()
+            .map_err(|e| DeserError::new_reflect(e, input, Span::default(), source))
+    };
+    // Apply span conversion if there's an error
+    match result {
+        Ok(value) => Ok(value),
+        Err(mut error) => {
+            // Use the dispatch macro to handle span conversion
+            let new_span = cook_span_dispatch!(format, error.span, input);
+
+            // Only create a new error if the span actually changed
+            if new_span != error.span {
+                error = DeserError {
+                    input: error.input,
+                    span: new_span,
+                    kind: error.kind,
+                    source_id: error.source_id,
+                };
+            }
+
+            Err(error)
+        }
+    }
 }
 
 /// Deserializes a working-in-progress value into a fully materialized heap value.
@@ -274,7 +332,7 @@ where
 pub fn deserialize_wip<'input, 'facet, 'shape, F>(
     mut wip: Wip<'facet, 'shape>,
     input: &'input F::Input<'input>,
-    mut format: F,
+    format: &mut F,
 ) -> Result<HeapValue<'facet, 'shape>, DeserError<'input, 'shape>>
 where
     F: Format + 'shape,
@@ -1081,4 +1139,72 @@ where
             }
         }
     }
+}
+
+#[allow(dead_code)]
+trait ConvertSpan<F: Format> {
+    fn run<'a>(self, format: &F, input: &'a F::Input<'a>) -> Span<Cooked>;
+}
+
+// Cooked spans - just pass through
+impl<F: Format> ConvertSpan<F> for &Spez<Span<Cooked>> {
+    fn run<'a>(self, _format: &F, _input: &'a F::Input<'a>) -> Span<Cooked> {
+        self.0
+    }
+}
+
+// Raw spans - use format's cook_span method
+impl<F: Format<SpanType = Raw>> ConvertSpan<F> for &Spez<Span<Raw>> {
+    fn run<'a>(self, format: &F, input: &'a F::Input<'a>) -> Span<Cooked> {
+        format.cook_span(self.0, input)
+    }
+}
+
+/// This is the longer version of:
+///
+/// macro_rules! show_span {
+///     ($span:expr) => { (&Spez($span)).run() };
+/// }
+///
+/// The difference is this one will allow you to pass in regular Span (non-generic)
+/// because which to choose is unambiguous when done with the match arm approach.
+///
+/// See issue #628: https://github.com/facet-rs/facet/pull/628#issuecomment-2887682909
+#[macro_export]
+macro_rules! cook_span_dispatch {
+    ($format:expr, $span:expr, $input:expr) => {{
+        // ───────────────────────────────────────────────────────────────
+        //  1.  Local wrapper to hold the span
+        // ───────────────────────────────────────────────────────────────
+        struct __Match<T>(core::cell::Cell<Option<T>>);
+
+        // ───────────────────────────────────────────────────────────────
+        //  2.  A dispatch trait with implementations that handle different span types
+        //      The reference depth mechanism makes the impls mutually exclusive
+        // ───────────────────────────────────────────────────────────────
+        trait __Dispatch<F: $crate::Format> {
+            fn run<'a>(self, format: &F, input: &'a F::Input<'a>) -> $crate::span::Span<$crate::span::Cooked>;
+        }
+
+        // Cooked span implementation - one reference level
+        impl<F: $crate::Format> __Dispatch<F> for &__Match<$crate::span::Span<$crate::span::Cooked>> {
+            fn run<'a>(self, _format: &F, _input: &'a F::Input<'a>) -> $crate::span::Span<$crate::span::Cooked> {
+                self.0.take().unwrap()
+            }
+        }
+
+        // Raw span implementation - two reference levels
+        impl<F: $crate::Format<SpanType = $crate::span::Raw>> __Dispatch<F> for &&__Match<$crate::span::Span<$crate::span::Raw>> {
+            fn run<'a>(self, format: &F, input: &'a F::Input<'a>) -> $crate::span::Span<$crate::span::Cooked> {
+                let span = self.0.take().unwrap();
+                format.cook_span(span, input)
+            }
+        }
+
+        // ───────────────────────────────────────────────────────────────
+        //  3.  Wrap the span, get a reference, and call dispatch
+        // ───────────────────────────────────────────────────────────────
+        let __tmp = __Match(core::cell::Cell::new(Some($span)));
+        (&__tmp).run($format, $input)
+    }};
 }
