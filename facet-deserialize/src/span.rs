@@ -20,7 +20,7 @@ pub struct Span<C = Cooked> {
     pub start: Pos,
     /// Length of the span in bytes
     pub len: usize,
-    /// Hold on to <C>
+    /// Hold on to C
     _p: PhantomData<C>,
 }
 

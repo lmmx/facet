@@ -1176,7 +1176,7 @@ impl<F: Format<SpanType = Raw>> ConvertSpan<F> for &Spez<Span<Raw>> {
 /// The difference is this one will allow you to pass in regular Span (non-generic)
 /// because which to choose is unambiguous when done with the match arm approach.
 ///
-/// See issue #628: https://github.com/facet-rs/facet/pull/628#issuecomment-2887682909
+/// See issue #628: <https://github.com/facet-rs/facet/pull/628#issuecomment-2887682909>
 #[macro_export]
 macro_rules! cook_span_dispatch {
     ($format:expr, $span:expr, $input:expr) => {{
