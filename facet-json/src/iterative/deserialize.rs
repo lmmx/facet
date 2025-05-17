@@ -1,10 +1,10 @@
 use alloc::{borrow::Cow, format};
 
 use facet_core::Facet;
-pub use facet_deserialize::{DeserError, DeserErrorKind};
 use facet_deserialize::{
-    Expectation, Format, NextData, NextResult, Outcome, Scalar, Span, Spannable, Spanned,
+    Cooked, Expectation, Format, NextData, NextResult, Outcome, Scalar, Span, Spannable, Spanned,
 };
+pub use facet_deserialize::{DeserError, DeserErrorKind};
 use log::trace;
 
 use crate::tokenizer::{Token, TokenError, TokenErrorKind, Tokenizer};
@@ -20,6 +20,7 @@ where
 
 impl Format for crate::Json {
     type Input<'input> = [u8];
+    type SpanType = Cooked;
 
     fn source(&self) -> &'static str {
         "json"

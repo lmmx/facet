@@ -20,6 +20,7 @@ mod tests {
 
     impl Format for MockByteFormat {
         type Input<'input> = [u8];
+        type SpanType = Raw;
 
         fn source(&self) -> &'static str {
             "bin"
@@ -175,6 +176,7 @@ mod tests {
 
     impl Format for MockCliFormat {
         type Input<'input> = [&'input str];
+        type SpanType = Cooked;
 
         fn source(&self) -> &'static str {
             "cli"

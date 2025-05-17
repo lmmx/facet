@@ -171,6 +171,9 @@ pub trait Format {
     /// * `CliFmt`  => `Input<'input> = [&'input str]`
     type Input<'input>: ?Sized;
 
+    /// The type of span used by this format (Raw or Cooked)
+    type SpanType: 'static;
+
     /// The lowercase source ID of the format, used for error reporting.
     fn source(&self) -> &'static str;
 

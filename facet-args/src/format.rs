@@ -3,8 +3,8 @@ use alloc::string::ToString;
 use core::fmt;
 use facet_core::{Facet, FieldAttribute, Type, UserType};
 use facet_deserialize::{
-    DeserError, DeserErrorKind, Expectation, Format, NextData, NextResult, Outcome, Scalar, Span,
-    Spanned,
+    DeserError, DeserErrorKind, Expectation, Format, NextData, NextResult, Outcome, Raw, Scalar,
+    Span, Spanned,
 };
 
 /// Command-line argument format for Facet deserialization
@@ -123,6 +123,7 @@ where
 
 impl Format for Cli {
     type Input<'input> = [&'input str];
+    type SpanType = Raw;
 
     fn source(&self) -> &'static str {
         "args"
