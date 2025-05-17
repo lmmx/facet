@@ -305,6 +305,13 @@ where
             .materialize()
             .map_err(|e| DeserError::new_reflect(e, input, Span::default(), source))
     };
+    println!("deserialize function called");
+    println!("...........................");
+    println!("...........................");
+    println!("...........................");
+    println!("...........................");
+    println!("...........................");
+    println!("...........................");
     // Apply span conversion if there's an error
     match result {
         Ok(value) => Ok(value),
@@ -1188,14 +1195,21 @@ macro_rules! cook_span_dispatch {
 
         // Cooked span implementation - one reference level
         impl<F: $crate::Format> __Dispatch<F> for &__Match<$crate::span::Span<$crate::span::Cooked>> {
+            #[allow(unreachable_code)]
             fn run<'a>(self, _format: &F, _input: &'a F::Input<'a>) -> $crate::span::Span<$crate::span::Cooked> {
+                println!("NOT COOKING");
+                panic!("cook_span_dispatch macro was called (no cook)!");
                 self.0.take().unwrap()
             }
         }
 
         // Raw span implementation - two reference levels
         impl<F: $crate::Format<SpanType = $crate::span::Raw>> __Dispatch<F> for &&__Match<$crate::span::Span<$crate::span::Raw>> {
+            #[allow(unreachable_code)]
+            #[allow(unused_variables)]
             fn run<'a>(self, format: &F, input: &'a F::Input<'a>) -> $crate::span::Span<$crate::span::Cooked> {
+                println!("COOKING!!!");
+                panic!("cook_span_dispatch macro was called (cooked)!");
                 let span = self.0.take().unwrap();
                 format.cook_span(span, input)
             }
