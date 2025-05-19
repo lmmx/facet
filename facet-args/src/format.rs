@@ -290,6 +290,20 @@ impl Format for Cli {
                     );
                 }
 
+                // Check for slice/vec types that should be comma-separated
+                if shape.is_type::<Vec<u64>>() || shape.is_type::<Vec<String>>() {
+                    eprintln!("Hello Vec<u64>");
+                    // For Vec<u64> wrapped in Opaque, start a list
+                    return (
+                        nd,
+                        Ok(Spanned {
+                            node: Outcome::ListStarted,
+                            span: Span::new(arg_idx, 0), // Do not advance, the list is
+                                                         // delimiter-separated in this arg
+                        }),
+                    );
+                }
+
                 // Try to parse as appropriate type
                 // Handle numeric types
                 if let Ok(v) = arg.parse::<u64>() {
@@ -332,8 +346,11 @@ impl Format for Cli {
 
             // List items
             Expectation::ListItemOrListClose => {
+                // eprintln!("Hello mum, {}", args[arg_idx]);
+                eprintln!("Hello mum");
                 // End the list if we're out of arguments, or if it's a new flag
                 if arg_idx >= args.len() || args[arg_idx].starts_with('-') {
+                    eprintln!("gootbye");
                     return (
                         nd,
                         Ok(Spanned {
@@ -343,12 +360,45 @@ impl Format for Cli {
                     );
                 }
 
-                // Process the next item in the list
+                let arg = args[arg_idx];
+                let span = Span::new(arg_idx, 1);
+
+                // Try to parse as appropriate type
+                // Handle numeric types
+                if let Ok(v) = arg.parse::<u64>() {
+                    return (
+                        nd,
+                        Ok(Spanned {
+                            node: Outcome::Scalar(Scalar::U64(v)),
+                            span,
+                        }),
+                    );
+                }
+                if let Ok(v) = arg.parse::<i64>() {
+                    return (
+                        nd,
+                        Ok(Spanned {
+                            node: Outcome::Scalar(Scalar::I64(v)),
+                            span,
+                        }),
+                    );
+                }
+                if let Ok(v) = arg.parse::<f64>() {
+                    return (
+                        nd,
+                        Ok(Spanned {
+                            node: Outcome::Scalar(Scalar::F64(v)),
+                            span,
+                        }),
+                    );
+                }
+
+                // Default to string type
                 (
                     nd,
                     Ok(Spanned {
-                        node: Outcome::Scalar(Scalar::String(Cow::Borrowed(args[arg_idx]))),
-                        span: Span::new(arg_idx, 1),
+                        node: Outcome::Scalar(Scalar::String(Cow::Borrowed(arg))),
+                        span,
                     }),
                 )
             }
