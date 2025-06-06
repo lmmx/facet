@@ -374,7 +374,7 @@ impl PrimitiveRepr {
 #[derive(Clone)]
 pub struct PAttrs {
     /// An array of doc lines
-    pub doc: Vec<TokenStream>,
+    pub doc: Vec<String>,
 
     /// Facet attributes specifically
     pub facet: Vec<PFacetAttr>,
@@ -388,7 +388,7 @@ pub struct PAttrs {
 
 impl PAttrs {
     fn parse(attrs: &[facet_macros_parse::Attribute], display_name: &mut String) -> Self {
-        let mut doc_lines: Vec<TokenStream> = Vec::new();
+        let mut doc_lines: Vec<String> = Vec::new();
         let mut facet_attrs: Vec<PFacetAttr> = Vec::new();
         let mut repr: Option<PRepr> = None;
         let mut rename_all: Option<RenameRule> = None;
@@ -397,7 +397,7 @@ impl PAttrs {
             match &attr.body.content {
                 facet_macros_parse::AttributeInner::Doc(doc_attr) => {
                     // Handle doc comments
-                    doc_lines.push(doc_attr.value.to_token_stream());
+                    doc_lines.push(doc_attr.value.as_str().replace("\\\"", "\""));
                 }
                 facet_macros_parse::AttributeInner::Repr(repr_attr) => {
                     if repr.is_some() {

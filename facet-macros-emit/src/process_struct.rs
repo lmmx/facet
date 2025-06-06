@@ -32,7 +32,12 @@ pub(crate) fn gen_field_from_pfield(
 
     let mut vtable_items: Vec<TokenStream> = vec![];
     let mut attribute_list: Vec<TokenStream> = vec![];
-    let doc_lines: Vec<TokenStream> = field.attrs.doc.iter().map(|doc| quote!(#doc)).collect();
+    let doc_lines: Vec<String> = field
+        .attrs
+        .doc
+        .iter()
+        .map(|doc| doc.as_str().replace("\\\"", "\""))
+        .collect();
     let mut shape_of = quote! { shape_of };
     let mut asserts: Vec<TokenStream> = vec![];
 
